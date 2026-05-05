@@ -8,7 +8,7 @@ import {
   Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2
 } from 'lucide-react';
 
-// --- CONFIGURAÇÃO DO FIREBASE (Integrada para evitar erros de importação) ---
+// --- CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyARH2lOjbz9fQsOVJ25y-IQdzuMnfbfpRE",
   authDomain: "aoki-7a6ec.firebaseapp.com",
@@ -51,6 +51,13 @@ export default function App() {
 
   const fileInputRef = useRef(null);
   const currentClient = INITIAL_CLIENTS.find(c => c.id === activeClientId);
+
+  // ✨ NOVO: Efeito para mudar o Título da Página dinamicamente
+  useEffect(() => {
+    if (currentClient) {
+      document.title = `${currentClient.name} | SocialFlow Aoki`;
+    }
+  }, [currentClient]);
 
   useEffect(() => {
     signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
