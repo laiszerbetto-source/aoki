@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, storage } from './firebase'; // Ajuste o caminho se o seu arquivo firebase estiver noutro sítio
+import { db, storage } from './firebase'; 
 import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Plus, Calendar, Image as ImageIcon, CheckCircle, X } from 'lucide-react';
@@ -85,7 +85,7 @@ export default function App() {
       // Recarrega a lista de posts
       await fetchPosts();
 
-      // ✨ MELHORIA: Limpa os campos e FECHA a tela automaticamente
+      // Limpa os campos e fecha a tela automaticamente
       setTexto('');
       setImage(null);
       setDataAgendamento('');
@@ -179,7 +179,7 @@ export default function App() {
                 />
               </div>
 
-              {/* ✨ NOVO: Campo de Data e Hora do Agendamento */}
+              {/* Campo de Data e Hora do Agendamento */}
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Data e Hora da Publicação</label>
                 <input
