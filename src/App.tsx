@@ -124,8 +124,8 @@ export default function App() {
     const file = e.target.files[0];
     setUploadError('');
     if (file) {
-      if (file.size > 800000) {
-        setUploadError('Ficheiro muito grande (Máx 800KB para este protótipo).');
+      if (file.size > 5000000) {
+        setUploadError('Ficheiro muito grande (Máx 5mb para este protótipo).');
         return;
       }
       const reader = new FileReader();
