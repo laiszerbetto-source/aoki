@@ -5,7 +5,7 @@ import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'fi
 import { 
   CheckCircle2, XCircle, Clock, Send, Instagram, Facebook, Linkedin, 
   Plus, Trash2, Smartphone, Eye, Copy, Image as ImageIcon, Film, 
-  Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2
+  Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2, Share
 } from 'lucide-react';
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
@@ -41,6 +41,9 @@ export default function App() {
   const [uploadError, setUploadError] = useState('');
   const [copiedType, setCopiedType] = useState(null);
   
+  // ✨ NOVO: Estado para verificar se é a visão do cliente
+  const [isClientView, setIsClientView] = useState(false);
+
   const [formState, setFormState] = useState({
     content: '', platforms: [], hashtags: '', postType: 'estatico',
     media: null, scheduleDate: '', scheduleTime: ''
@@ -52,12 +55,21 @@ export default function App() {
   const fileInputRef = useRef(null);
   const currentClient = INITIAL_CLIENTS.find(c => c.id === activeClientId);
 
-  // ✨ NOVO: Efeito para mudar o Título da Página dinamicamente
+  // ✨ NOVO: Verificar se existe ?view=client na URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('view') === 'client') {
+      setIsClientView(true);
+    }
+  }, []);
+
   useEffect(() => {
     if (currentClient) {
-      document.title = `${currentClient.name} | SocialFlow Aoki`;
+      document.title = isClientView 
+        ? `Aprovação: ${currentClient.name} | Aoki` 
+        : `${currentClient.name} | SocialFlow Aoki`;
     }
-  }, [currentClient]);
+  }, [currentClient, isClientView]);
 
   useEffect(() => {
     signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
@@ -95,7 +107,7 @@ export default function App() {
     const file = e.target.files[0];
     setUploadError('');
     if (file) {
-      if (file.size > 5000000) { // 5MB
+      if (file.size > 5000000) {
         setUploadError('Ficheiro demasiado grande (Máximo 5MB).');
         return;
       }
@@ -141,6 +153,19 @@ export default function App() {
     setTimeout(() => setCopiedType(null), 2000);
   };
 
+  // ✨ NOVO: Função para gerar link do cliente
+  const copyClientLink = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'client');
+    const textArea = document.createElement("textarea");
+    textArea.value = url.toString();
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    alert("Link de aprovação copiado! Envie ao cliente.");
+  };
+
   if (isLoading) return <div className="h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse text-xl">Sincronizando Aoki Flow...</div>;
 
   return (
@@ -151,6 +176,15 @@ export default function App() {
           <div className="bg-indigo-600 p-2 rounded-2xl text-white"><Send size={24} /></div>
           <span className="font-black text-2xl tracking-tighter">SocialFlow</span>
         </div>
+
+        {isClientView && (
+          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-2">
+              <Eye size={12} /> Modo de Aprovação
+            </p>
+            <p className="text-[11px] text-amber-700 font-medium mt-1 leading-tight">Você está visualizando os posts pendentes para aprovação.</p>
+          </div>
+        )}
 
         <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Briefcase size={12} /> Marca Aoki</p>
@@ -180,12 +214,27 @@ export default function App() {
           ))}
         </nav>
 
-        <button
-          onClick={() => { setEditingId(null); setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' }); setIsModalOpen(true); }}
-          className="mt-auto bg-slate-900 text-white py-4 rounded-[2rem] font-bold flex items-center justify-center gap-2 hover:bg-black transition-all active:scale-95 shadow-xl"
-        >
-          <Plus size={20} /> Novo Conteúdo
-        </button>
+        <div className="mt-auto space-y-3">
+          {/* ✨ Botão de Partilha exclusivo para Admin */}
+          {!isClientView && (
+            <button
+              onClick={copyClientLink}
+              className="w-full bg-slate-100 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-all text-xs"
+            >
+              <Share size={16} /> Link p/ Cliente
+            </button>
+          )}
+
+          {/* Botão Novo Conteúdo (Escondido para cliente) */}
+          {!isClientView && (
+            <button
+              onClick={() => { setEditingId(null); setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' }); setIsModalOpen(true); }}
+              className="w-full bg-slate-900 text-white py-4 rounded-[2rem] font-bold flex items-center justify-center gap-2 hover:bg-black transition-all active:scale-95 shadow-xl"
+            >
+              <Plus size={20} /> Novo Conteúdo
+            </button>
+          )}
+        </div>
       </aside>
 
       {/* Feed Principal */}
@@ -196,7 +245,9 @@ export default function App() {
               <div className={`w-3 h-3 rounded-full bg-gradient-to-tr ${currentClient?.color}`} />
               <h2 className="text-3xl font-black text-slate-900 tracking-tight">{currentClient?.name}</h2>
             </div>
-            <p className="text-slate-400 text-sm font-medium italic">Rascunhos e aprovações</p>
+            <p className="text-slate-400 text-sm font-medium italic">
+              {isClientView ? 'Central de Aprovação do Cliente' : 'Rascunhos e aprovações'}
+            </p>
           </div>
           <div className="bg-white border border-slate-200 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
             <Globe size={12} className="text-indigo-500" /> Itens: {filteredPosts.length}
@@ -234,7 +285,7 @@ export default function App() {
                           {post.postType === 'reel' ? <Film size={12} /> : post.postType === 'carrossel' ? <Layers size={12} /> : <Square size={12} />}
                           {post.postType}
                         </span>
-                        <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
+                        <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
                       </div>
                       <span className="text-[10px] text-indigo-600 font-black flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
                         <Calendar size={14} /> {post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}
@@ -247,18 +298,30 @@ export default function App() {
                       {post.media ? (post.media.type === 'video' ? <div className="w-full h-full flex items-center justify-center bg-slate-900"><Film className="text-white/30" /></div> : <img src={post.media.url} className="w-full h-full object-cover" />) : <ImageIcon size={24} className="text-slate-200" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-slate-700 text-sm font-medium leading-relaxed line-clamp-3 mb-2 whitespace-pre-wrap">{post.content}</p>
+                      <p className="text-slate-700 text-sm font-medium leading-relaxed line-clamp-3 mb-3 whitespace-pre-wrap">{post.content}</p>
                       <p className="text-indigo-600 text-[11px] font-black tracking-tight truncate">{post.hashtags}</p>
                     </div>
                   </div>
 
                   <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-50">
                     <div className="flex gap-3">
-                      <button onClick={(e) => { e.stopPropagation(); setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-3 bg-slate-50 text-slate-500 rounded-xl hover:bg-indigo-50 border border-slate-100"><Edit3 size={18} /></button>
-                      <button onClick={(e) => { e.stopPropagation(); deletePost(post.id); }} className="p-3 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 border border-slate-100"><Trash2 size={18} /></button>
+                      {/* Controlos Administrativos (Escondidos para cliente) */}
+                      {!isClientView && (
+                        <>
+                          <button onClick={(e) => { e.stopPropagation(); setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-3 bg-slate-50 text-slate-500 rounded-xl hover:bg-indigo-50 border border-slate-100 transition-all"><Edit3 size={18} /></button>
+                          <button onClick={(e) => { e.stopPropagation(); deletePost(post.id); }} className="p-3 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 border border-slate-100 transition-all"><Trash2 size={18} /></button>
+                        </>
+                      )}
+                      
+                      {/* Rejeitar (Disponível para ambos se estiver pendente) */}
+                      {post.status === 'pendente' && (
+                        <button onClick={(e) => { e.stopPropagation(); if(confirm("Deseja rejeitar este post?")) setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'rejeitado' }, { merge: true }); }} className="bg-slate-50 text-rose-500 px-5 py-2.5 rounded-xl text-xs font-black border border-rose-100 hover:bg-rose-50 transition-all">Rejeitar</button>
+                      )}
                     </div>
+                    
+                    {/* Aprovar (Disponível para ambos se estiver pendente) */}
                     {post.status === 'pendente' && (
-                      <button onClick={(e) => { e.stopPropagation(); setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'aprovado' }, { merge: true }); }} className="bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-emerald-50">Aprovar</button>
+                      <button onClick={(e) => { e.stopPropagation(); setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'aprovado' }, { merge: true }); }} className="bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-emerald-50 hover:bg-emerald-600 transition-all">Aprovar Postagem</button>
                     )}
                   </div>
                 </div>
@@ -266,7 +329,7 @@ export default function App() {
             )}
           </div>
 
-          {/* Coluna da Direita: Smartphone Preview Dinâmico */}
+          {/* Coluna da Direita: Smartphone Preview */}
           <div className="hidden xl:block sticky top-10 space-y-6">
             {previewPost && (
               <div className="flex gap-1.5 bg-white p-2 rounded-[1.5rem] border border-slate-200 shadow-sm">
