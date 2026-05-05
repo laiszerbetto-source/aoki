@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, storage } from './firebase'; 
+import { db, storage } from './src/firebase';
 import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Plus, Calendar, Image as ImageIcon, CheckCircle, X } from 'lucide-react';
