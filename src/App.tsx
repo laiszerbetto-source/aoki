@@ -6,7 +6,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   CheckCircle2, XCircle, Clock, Send, Instagram, Facebook, Linkedin, 
   Plus, Trash2, Smartphone, Eye, Copy, Image as ImageIcon, Film, 
-  Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2, Share, ChevronLeft, ChevronRight, LayoutGrid, FileDown, SendHorizonal
+  Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2, Share, ChevronLeft, ChevronRight, LayoutGrid, FileDown, SendHorizonal, Maximize2
 } from 'lucide-react';
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
@@ -25,7 +25,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 const INITIAL_CLIENTS = [
-  { id: 'geral', name: 'Visão Geral', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
+  { id: 'geral', name: 'Visão Geral (Agência)', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
   { id: 'c1', name: 'Grupo Aoki', handle: 'grupoaoki', color: 'from-slate-700 to-black' },
   { id: 'c2', name: 'Ford Aoki', handle: 'fordaoki', color: 'from-blue-600 to-blue-900' },
   { id: 'c3', name: 'Mercedes Aoki', handle: 'mercedesaoki', color: 'from-slate-300 to-slate-500' },
@@ -85,9 +85,9 @@ export default function App() {
   const [isClientView, setIsClientView] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Estado do Chat de Feedback
   const [feedbackPost, setFeedbackPost] = useState(null);
   const [newFeedbackMessage, setNewFeedbackMessage] = useState('');
+  const [zoomedPost, setZoomedPost] = useState(null); // NOVO ESTADO: ZOOM DO POST
 
   const [draggedMediaIdx, setDraggedMediaIdx] = useState(null);
 
@@ -130,18 +130,15 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  // Mantém os modais sempre atualizados com os dados em tempo real
   useEffect(() => {
     const clientPosts = activeClientId === 'geral' ? posts : posts.filter(p => p.clientId === activeClientId);
     if (!previewPost || (activeClientId !== 'geral' && previewPost.clientId !== activeClientId)) {
       setPreviewPost(clientPosts[0] || null);
       if (clientPosts[0]) setPreviewPlatform(clientPosts[0].platforms[0]);
     }
-    
-    // Atualiza o modal de feedback em tempo real se novos comentários chegarem
-    if (feedbackPost) {
-      const updatedPost = posts.find(p => p.id === feedbackPost.id);
-      if (updatedPost) setFeedbackPost(updatedPost);
-    }
+    if (feedbackPost) { const updated = posts.find(p => p.id === feedbackPost.id); if (updated) setFeedbackPost(updated); }
+    if (zoomedPost) { const updated = posts.find(p => p.id === zoomedPost.id); if (updated) setZoomedPost(updated); }
   }, [activeClientId, posts]);
 
   const filteredPosts = posts.filter(p => {
@@ -201,7 +198,7 @@ export default function App() {
     });
   };
 
-  const deletePost = async (id) => { if (confirm("Apagar post permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id)); };
+  const deletePost = async (id) => { if (confirm("Apagar rascunho permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id)); };
 
   const copyClientLink = () => {
     const url = new URL(window.location.href); url.searchParams.set('view', 'client');
@@ -226,11 +223,15 @@ export default function App() {
     return { firstDay, days };
   };
 
+  const changePostStatus = (id, newStatus, e) => {
+    if (e) e.stopPropagation();
+    setDoc(doc(db, 'agencias', 'aoki', 'posts', id), { status: newStatus }, { merge: true });
+  };
+
   if (isLoading) return <div className="h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse text-xl"><Loader2 className="animate-spin mr-3" /> Sincronizando Flow...</div>;
 
   return (
     <>
-    {/* APP NORMAL (ESCONDIDO NA IMPRESSÃO) */}
     <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden">
       
       {/* SIDEBAR */}
@@ -284,7 +285,7 @@ export default function App() {
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start content-start">
               {filteredPosts.length === 0 ? (
-                <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center lg:col-span-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem posts</div>
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center lg:col-span-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
               ) : (
                 filteredPosts.map(post => (
                   <div key={post.id} onClick={() => { setPreviewPost(post); setPreviewPlatform(post.platforms[0]); }} className={`bg-white p-6 rounded-[2.5rem] border transition-all cursor-pointer hover:shadow-2xl relative ${previewPost?.id === post.id ? 'border-indigo-500 ring-4 ring-indigo-50' : 'border-slate-200 shadow-sm'}`}>
@@ -301,7 +302,17 @@ export default function App() {
                       <div className="flex flex-col items-end gap-2">
                         <div className="flex gap-2">
                           <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{post.postType}</span>
-                          <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
+                          {/* SELECT INTELIGENTE DE STATUS */}
+                          <select 
+                            value={post.status} 
+                            onChange={(e) => changePostStatus(post.id, e.target.value, e)}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border outline-none cursor-pointer appearance-none text-center ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}
+                          >
+                            <option value="pendente">Pendente</option>
+                            <option value="aprovado">Aprovado</option>
+                            <option value="rejeitado">Rejeitado</option>
+                          </select>
                         </div>
                         <span className="text-[10px] text-indigo-600 font-black flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
                           <Calendar size={14} /> {post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}
@@ -322,6 +333,12 @@ export default function App() {
 
                     <div className="flex items-center justify-between gap-1.5 mt-6 pt-6 border-t border-slate-50 overflow-hidden">
                       <div className="flex items-center gap-1 min-w-0">
+                        
+                        {/* BOTÃO DE ZOOM */}
+                        <button onClick={(e) => { e.stopPropagation(); setZoomedPost(post); }} className="p-1.5 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 border border-slate-100 transition-all flex-shrink-0" title="Ampliar">
+                          <Maximize2 size={16} />
+                        </button>
+
                         {/* BOTÃO DO CHAT DE FEEDBACK */}
                         <button onClick={(e) => { e.stopPropagation(); setFeedbackPost(post); }} className="p-1.5 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-50 border border-slate-100 transition-all flex-shrink-0 relative">
                           <MessageSquare size={16} />
@@ -334,9 +351,14 @@ export default function App() {
                             <button onClick={(e) => { e.stopPropagation(); deletePost(post.id); }} className="p-1.5 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 border border-slate-100 flex-shrink-0"><Trash2 size={16} /></button>
                           </>
                         )}
-                        {post.status === 'pendente' && <button onClick={(e) => { e.stopPropagation(); if(confirm("Rejeitar?")) setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'rejeitado' }, { merge: true }); }} className="bg-slate-50 text-rose-500 px-2 py-1.5 rounded-xl text-[10px] font-black border border-rose-100 truncate">Rejeitar</button>}
                       </div>
-                      {post.status === 'pendente' && <button onClick={(e) => { e.stopPropagation(); setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'aprovado' }, { merge: true }); }} className="bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-lg truncate">Aprovar Postagem</button>}
+                      
+                      {/* BOTÕES DE AÇÃO RÁPIDA DINÂMICOS */}
+                      <div className="flex gap-1.5 shrink-0">
+                        {post.status !== 'rejeitado' && <button onClick={(e) => changePostStatus(post.id, 'rejeitado', e)} className="bg-slate-50 text-rose-500 px-3 py-1.5 rounded-xl text-[10px] font-black border border-rose-100 truncate hover:bg-rose-100 transition-colors">Rejeitar</button>}
+                        {post.status !== 'pendente' && <button onClick={(e) => changePostStatus(post.id, 'pendente', e)} className="bg-slate-50 text-amber-500 px-3 py-1.5 rounded-xl text-[10px] font-black border border-amber-100 truncate hover:bg-amber-100 transition-colors">Pendente</button>}
+                        {post.status !== 'aprovado' && <button onClick={(e) => changePostStatus(post.id, 'aprovado', e)} className="bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-lg truncate hover:bg-emerald-600 transition-colors">Aprovar Post</button>}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -428,8 +450,8 @@ export default function App() {
                             key={p.id}
                             draggable
                             onDragStart={(e) => e.dataTransfer.setData('postId', p.id)}
-                            onClick={() => { setPreviewPost(p); setPreviewPlatform(p.platforms[0]); setMainView('feed'); }}
-                            className={`p-1.5 rounded-lg border flex flex-col gap-1 cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02] shadow-sm ${
+                            onClick={() => { setZoomedPost(p); }}
+                            className={`p-1.5 rounded-lg border flex flex-col gap-1 cursor-pointer hover:scale-[1.02] shadow-sm ${
                               p.status === 'aprovado' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-amber-50/50 border-amber-100'
                             }`}
                           >
@@ -450,6 +472,42 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* MODAL DE ZOOM (NOVO!) */}
+      {zoomedPost && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-8" onClick={() => setZoomedPost(null)}>
+          <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setZoomedPost(null)} className="absolute top-6 right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><XCircle size={24} /></button>
+            
+            <div className="w-full md:w-1/2 bg-slate-50 border-r border-slate-100 p-8 flex items-center justify-center min-h-[300px]">
+               <div className="w-full max-w-sm aspect-[4/5] rounded-2xl overflow-hidden shadow-lg bg-white">
+                  <MediaCarousel media={zoomedPost.media} isPreview={true} />
+               </div>
+            </div>
+            
+            <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto flex flex-col">
+               <div className="flex gap-2 mb-6">
+                  <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{zoomedPost.postType}</span>
+                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : zoomedPost.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span>
+               </div>
+               
+               <h3 className="text-xl font-black text-slate-900 mb-2">Detalhes da Postagem</h3>
+               <p className="text-sm font-bold text-indigo-600 flex items-center gap-2 mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={16} /> {zoomedPost.scheduleDate ? `${zoomedPost.scheduleDate.split('-').reverse().join('/')} às ${zoomedPost.scheduleTime}` : 'Imediato'}</p>
+               
+               <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-6">
+                  <p className="text-sm text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">{zoomedPost.content}</p>
+               </div>
+               <p className="text-sm font-black text-indigo-600 mb-8">{zoomedPost.hashtags}</p>
+               
+               <div className="mt-auto pt-6 border-t border-slate-100 flex gap-2">
+                  {zoomedPost.status !== 'rejeitado' && <button onClick={() => changePostStatus(zoomedPost.id, 'rejeitado')} className="flex-1 bg-rose-50 text-rose-600 py-3 rounded-2xl font-black text-xs hover:bg-rose-100 transition-colors">Rejeitar</button>}
+                  {zoomedPost.status !== 'pendente' && <button onClick={() => changePostStatus(zoomedPost.id, 'pendente')} className="flex-1 bg-amber-50 text-amber-600 py-3 rounded-2xl font-black text-xs hover:bg-amber-100 transition-colors">Pendente</button>}
+                  {zoomedPost.status !== 'aprovado' && <button onClick={() => changePostStatus(zoomedPost.id, 'aprovado')} className="flex-1 bg-emerald-500 text-white py-3 rounded-2xl font-black text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors">Aprovar Post</button>}
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE NOVO/EDITAR POST */}
       {isModalOpen && (
@@ -579,11 +637,11 @@ export default function App() {
       )}
     </div>
 
-    {/* LAYOUT EXCLUSIVO PARA IMPRESSÃO/PDF (SÓ APARECE AO IMPRIMIR) */}
+    {/* LAYOUT EXCLUSIVO PARA IMPRESSÃO/PDF */}
     <div className="hidden print:block bg-white p-8 font-sans">
       <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 mb-1">Relatório de Posts</h1>
+          <h1 className="text-3xl font-black text-slate-900 mb-1">Relatório de Rascunhos</h1>
           <h2 className="text-lg font-bold text-slate-500">{currentClient?.name}</h2>
         </div>
         <div className="text-right">
@@ -616,7 +674,6 @@ export default function App() {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-slate-800 whitespace-pre-wrap leading-relaxed">{post.content}</p>
                   <p className="text-sm font-bold text-indigo-600 mt-4">{post.hashtags}</p>
-                  
                   <div className="mt-4 inline-block px-3 py-1 bg-slate-100 rounded-md text-xs font-black uppercase text-slate-500">Status: {post.status}</div>
                 </div>
               </div>
