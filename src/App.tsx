@@ -335,20 +335,20 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center mt-6 pt-6 border-t border-slate-50">
-                      <div className="flex gap-3">
+       <div className="flex items-center justify-between gap-1.5 mt-6 pt-6 border-t border-slate-50 overflow-hidden">
+                      <div className="flex items-center gap-1 flex-shrink-1 min-w-0">
                         {!isClientView && (
                           <>
-                            <button onClick={(e) => { e.stopPropagation(); setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-3 bg-slate-50 text-slate-500 rounded-xl hover:bg-indigo-50 border border-slate-100 transition-all"><Edit3 size={18} /></button>
-                            <button onClick={(e) => { e.stopPropagation(); deletePost(post.id); }} className="p-3 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 border border-slate-100 transition-all"><Trash2 size={18} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-1.5 bg-slate-50 text-slate-500 rounded-xl hover:bg-indigo-50 border border-slate-100 transition-all flex-shrink-0"><Edit3 size={16} /></button>
+                            <button onClick={(e) => { e.stopPropagation(); deletePost(post.id); }} className="p-1.5 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 border border-slate-100 transition-all flex-shrink-0"><Trash2 size={16} /></button>
                           </>
                         )}
                         {post.status === 'pendente' && (
-                          <button onClick={(e) => { e.stopPropagation(); if(confirm("Rejeitar este post?")) setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'rejeitado' }, { merge: true }); }} className="bg-slate-50 text-rose-500 px-5 py-2.5 rounded-xl text-xs font-black border border-rose-100 hover:bg-rose-50">Rejeitar</button>
+                          <button onClick={(e) => { e.stopPropagation(); if(confirm("Rejeitar este post?")) setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'rejeitado' }, { merge: true }); }} className="bg-slate-50 text-rose-500 px-2.5 py-1.5 rounded-xl text-[10px] font-black border border-rose-100 hover:bg-rose-50 whitespace-nowrap flex-shrink-1 min-w-0 truncate">Rejeitar</button>
                         )}
                       </div>
                       {post.status === 'pendente' && (
-                        <button onClick={(e) => { e.stopPropagation(); setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'aprovado' }, { merge: true }); }} className="bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-black shadow-lg shadow-emerald-50 active:scale-95">Aprovar Postagem</button>
+                        <button onClick={(e) => { e.stopPropagation(); setDoc(doc(db, 'agencias', 'aoki', 'posts', post.id), { status: 'aprovado' }, { merge: true }); }} className="bg-emerald-500 text-white px-2.5 py-1.5 rounded-xl text-[10px] font-black shadow-lg shadow-emerald-50 active:scale-95 whitespace-nowrap text-center flex-shrink-1 min-w-0 truncate">Aprovar Postagem</button>
                       )}
                     </div>
                   </div>
