@@ -342,4 +342,114 @@ export default function App() {
                               {(() => {
                                 const mArr = Array.isArray(previewPost.media) ? previewPost.media : (previewPost.media ? [previewPost.media] : []);
                                 return mArr.map((m, i) => (
-                                  <div key={i} className="w
+                                  <div key={i} className="w-full shrink-0 snap-center flex items-center justify-center bg-slate-50">
+                                    {m.type === 'video' ? <video src={m.url} className="w-full h-full object-contain" /> : <img src={m.url} className="w-full h-full object-contain" />}
+                                  </div>
+                                ));
+                              })()}
+                            </div>
+                            {/* BOLINHAS (INDICADORES) DO CARROSSEL */}
+                            {Array.isArray(previewPost.media) && previewPost.media.length > 1 && (
+                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-black/20 backdrop-blur-md rounded-full">
+                                {previewPost.media.map((_, i) => (
+                                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-sm" />
+                                ))}
+                              </div>
+                            )}
+                         </div>
+                         <p className="text-[12.5px] text-slate-800 font-medium whitespace-pre-wrap">{previewPost.content}</p>
+                         <p className="text-[12.5px] text-indigo-600 font-bold mt-2">{previewPost.hashtags}</p>
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-slate-200 opacity-20"><Smartphone size={48} className="mb-4" /><p className="text-[10px] font-black uppercase">Selecione um post</p></div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="p-8 border-b border-slate-50 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-xl z-10">
+              <h2 className="text-2xl font-black text-slate-900">{editingId ? 'Editar Post' : 'Novo Conteúdo'}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:rotate-90 transition-all"><XCircle size={24} /></button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-8 space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-8">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Destino</label>
+                    <div className="flex gap-2">
+                      {['instagram', 'facebook', 'linkedin'].map(plt => (
+                        <button key={plt} type="button" onClick={() => setFormState(prev => ({ ...prev, platforms: prev.platforms.includes(plt) ? prev.platforms.filter(p => p !== plt) : [...prev.platforms, plt] }))} className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[9px] uppercase ${formState.platforms.includes(plt) ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md' : 'border-slate-100 text-slate-400'}`}>{plt}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Formato</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[ { id: 'estatico', icon: <Square size={16} />, label: 'Post' }, { id: 'carrossel', icon: <Layers size={16} />, label: 'Album' }, { id: 'reel', icon: <Film size={16} />, label: 'Vídeo' } ].map(type => (
+                        <button key={type.id} type="button" onClick={() => setFormState({...formState, postType: type.id})} className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Mídia</label>
+                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
+                    <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
+                      <div onClick={() => fileInputRef.current.click()} className="h-24 w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
+                        <Plus size={24} className="text-indigo-500 mb-1" />
+                        <span className="text-[9px] font-black text-slate-500 uppercase">Upload</span>
+                      </div>
+                      {(() => {
+                        const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
+                        return mArr.map((m, i) => (
+                          <div key={i} className="h-24 w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 group/item">
+                            <img src={m.url} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-sm">
+                              <button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-1.5 rounded-lg"><Trash2 size={12} /></button>
+                              <div className="flex gap-2">
+                                {i > 0 && <button type="button" onClick={() => moveMedia(i, -1)} className="bg-white/20 text-white p-1 rounded"><ChevronLeft size={14} /></button>}
+                                {i < mArr.length - 1 && <button type="button" onClick={() => moveMedia(i, 1)} className="bg-white/20 text-white p-1 rounded"><ChevronRight size={14} /></button>}
+                              </div>
+                            </div>
+                            <span className="absolute top-1 left-1 bg-slate-900/60 text-white text-[8px] font-black px-1 py-0.5 rounded-md">{i + 1}</span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-8">
+                  <div className="bg-indigo-50/50 p-6 rounded-[2.5rem] border border-indigo-100">
+                    <label className="block text-[10px] font-black text-indigo-400 uppercase mb-4 tracking-widest">Agendamento</label>
+                    <div className="space-y-3">
+                      <input type="date" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleDate} onChange={(e) => setFormState({...formState, scheduleDate: e.target.value})} />
+                      <input type="time" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Legenda</label>
+                    <textarea required rows={5} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Escreve aqui..."></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Hashtags</label>
+                    <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-4 pt-6 border-t border-slate-50">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600 transition-colors">Sair</button>
+                <button type="submit" disabled={formState.platforms.length === 0} className={`flex-[2] py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${formState.platforms.length === 0 ? 'bg-slate-100 text-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>Enviar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
