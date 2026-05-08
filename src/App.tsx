@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // ADICIONADO FIREBASE STORAGE
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   CheckCircle2, XCircle, Clock, Send, Instagram, Facebook, Linkedin, 
   Plus, Trash2, Smartphone, Eye, Copy, Image as ImageIcon, Film, 
@@ -22,7 +22,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app); // INICIALIZAÇÃO DO STORAGE
+const storage = getStorage(app);
 
 const INITIAL_CLIENTS = [
   { id: 'geral', name: 'Visão Geral (Agência)', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
@@ -97,7 +97,7 @@ const MediaCarousel = ({ media, isPreview = false }) => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false); // Estado de envio pro Firebase Storage
+  const [isUploading, setIsUploading] = useState(false);
   const [posts, setPosts] = useState([]);
   const [activeClientId, setActiveClientId] = useState(INITIAL_CLIENTS[0].id);
   const [activeTab, setActiveTab] = useState('todos');
@@ -108,7 +108,7 @@ export default function App() {
   const [isClientView, setIsClientView] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  const [draggedMediaIdx, setDraggedMediaIdx] = useState(null); // DRAG & DROP DA MÍDIA
+  const [draggedMediaIdx, setDraggedMediaIdx] = useState(null);
 
   const [formState, setFormState] = useState({
     content: '', platforms: [], hashtags: '', postType: 'estatico',
@@ -173,11 +173,10 @@ export default function App() {
     setUploadError('');
     if (files.length === 0) return;
     
-    // Leitura super rápida apenas para Preview (URL local). O Upload acontece no submit!
     const newMedia = files.map(file => ({
       type: file.type.startsWith('video') ? 'video' : 'image',
-      url: URL.createObjectURL(file), // Preview instantâneo
-      file: file // Guardamos o arquivo real para enviar pro Google Storage depois
+      url: URL.createObjectURL(file),
+      file: file
     }));
 
     setFormState(prev => ({
@@ -191,36 +190,32 @@ export default function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formState.content.trim() || formState.platforms.length === 0) return;
-    setIsUploading(true); // Bloqueia o botão e avisa o utilizador
+    setIsUploading(true);
 
     try {
       let finalMediaData = null;
 
-      // 1. FAZ UPLOAD DOS ARQUIVOS PRO FIREBASE STORAGE PRIMEIRO
       if (formState.media) {
         const mediaArray = Array.isArray(formState.media) ? formState.media : [formState.media];
         const processedMedia = [];
 
         for (const m of mediaArray) {
-          if (m.file) { 
-            // É um arquivo novo! Envia pro Firebase Storage
+          if (m.file) {
             const fileRef = ref(storage, `agencias/aoki/posts/${Date.now()}_${m.file.name}`);
             await uploadBytes(fileRef, m.file);
             const downloadUrl = await getDownloadURL(fileRef);
             processedMedia.push({ type: m.type, url: downloadUrl });
           } else {
-            // Já era um link antigo do banco (edição), mantém.
             processedMedia.push(m);
           }
         }
         finalMediaData = formState.postType === 'carrossel' ? processedMedia : processedMedia[0];
       }
 
-      // 2. SALVA O POST NO BANCO DE DADOS
       const id = editingId || Date.now().toString();
       await setDoc(doc(db, 'agencias', 'aoki', 'posts', id), {
         ...formState,
-        media: finalMediaData, // Salva só a URL segura agora
+        media: finalMediaData,
         clientId: activeClientId === 'geral' ? 'c1' : activeClientId,
         status: editingId ? (posts.find(p => p.id === editingId)?.status || 'pendente') : 'pendente',
         date: editingId ? posts.find(p => p.id === editingId).date : new Date().toISOString(),
@@ -232,7 +227,7 @@ export default function App() {
       setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' });
     } catch (err) {
       console.error(err);
-      setUploadError("Erro ao enviar arquivos para a nuvem. Tente novamente.");
+      setUploadError("Erro ao guardar.");
     } finally {
       setIsUploading(false);
     }
@@ -259,7 +254,7 @@ export default function App() {
     textArea.select();
     document.execCommand('copy');
     document.body.removeChild(textArea);
-    alert("Link do cliente copiado!");
+    alert("Link copiado!");
   };
 
   const getDaysInMonth = (date) => {
@@ -275,7 +270,7 @@ export default function App() {
   return (
     <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden">
       
-      {/* --- SIDEBAR --- */}
+      {/* SIDEBAR */}
       <aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-8 max-h-[45vh] md:max-h-none md:h-full overflow-y-auto overflow-x-hidden z-20 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">  
         <div className="flex items-center gap-3">
           <div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div>
@@ -310,7 +305,6 @@ export default function App() {
         )}
       </aside>
 
-      {/* --- CONTEÚDO PRINCIPAL --- */}
       <main className="flex-1 h-full overflow-y-auto overflow-x-hidden p-5 md:p-10 min-w-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -322,7 +316,6 @@ export default function App() {
           </div>
         </header>
 
-        {/* VIEW: FEED DE POSTS */}
         {mainView === 'feed' && (
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start content-start">
@@ -342,8 +335,14 @@ export default function App() {
                         ))}
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{post.postType}</span>
-                        <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
+                        <div className="flex gap-2">
+                          <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{post.postType}</span>
+                          <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
+                        </div>
+                        {/* DATA E HORA DE VOLTA AQUI! */}
+                        <span className="text-[10px] text-indigo-600 font-black flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
+                          <Calendar size={14} /> {post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}
+                        </span>
                       </div>
                     </div>
 
@@ -351,7 +350,6 @@ export default function App() {
                       <div className="w-28 aspect-[4/5] shrink-0 rounded-2xl overflow-hidden border border-slate-100 relative shadow-inner">
                         <MediaCarousel media={post.media} isPreview={false} />
                       </div>
-
                       <div className="flex-1 min-w-0">
                         {activeClientId === 'geral' && <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">{INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}</p>}
                         <p className="text-slate-700 text-sm font-medium line-clamp-3 mb-2 whitespace-pre-wrap">{post.content}</p>
@@ -399,11 +397,9 @@ export default function App() {
                           <Smartphone size={14} className="text-slate-200" />
                        </div>
                        <div className="p-4">
-                         
                          <div className="relative group mb-4 rounded-2xl overflow-hidden shadow-sm border border-slate-100 bg-white aspect-[4/5]">
                             <MediaCarousel media={previewPost.media} isPreview={true} />
                          </div>
-                         
                          <p className="text-[12.5px] text-slate-800 font-medium whitespace-pre-wrap">{previewPost.content}</p>
                          <p className="text-[12.5px] text-indigo-600 font-bold mt-2">{previewPost.hashtags}</p>
                        </div>
@@ -417,7 +413,7 @@ export default function App() {
           </div>
         )}
 
-        {/* VIEW: CALENDÁRIO COM DRAG & DROP */}
+        {/* VIEW: CALENDÁRIO */}
         {mainView === 'calendario' && (
           <div className="bg-white rounded-[3rem] border border-slate-200 overflow-hidden shadow-sm">
             <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
@@ -486,7 +482,6 @@ export default function App() {
         )}
       </main>
 
-      {/* --- MODAL DE NOVO/EDITAR (COM DRAG & DROP) --- */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
@@ -515,9 +510,8 @@ export default function App() {
                     </div>
                   </div>
                   
-                  {/* UPLOAD COM DRAG & DROP DE IMAGENS */}
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Mídia (Upload p/ Nuvem)</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Mídia (Arraste p/ Reordenar)</label>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
                     
                     <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
@@ -583,7 +577,7 @@ export default function App() {
               <div className="flex gap-4 pt-6 border-t border-slate-50">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600 transition-colors">Sair</button>
                 <button type="submit" disabled={formState.platforms.length === 0 || isUploading} className={`flex-[2] flex items-center justify-center gap-2 py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${formState.platforms.length === 0 ? 'bg-slate-100 text-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
-                  {isUploading ? <><Loader2 size={16} className="animate-spin" /> A guardar mídia...</> : (editingId ? 'Atualizar Post' : 'Lançar Post')}
+                  {isUploading ? <><Loader2 size={16} className="animate-spin" /> A guardar...</> : (editingId ? 'Atualizar Post' : 'Lançar Post')}
                 </button>
               </div>
             </form>
