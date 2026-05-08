@@ -277,12 +277,15 @@ export default function App() {
           </div>
         </header>
 
-        {/* --- VIEW: FEED --- */}
+{/* --- VIEW: FEED --- */}
         {mainView === 'feed' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-start">
-            <div className="space-y-6 max-w-3xl w-full">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-10">
+            
+            {/* A MÁGICA DAS 2 COLUNAS ACONTECE NESTA DIV ABAIXO: */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start content-start">
+              
               {filteredPosts.length === 0 ? (
-                <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center">
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center lg:col-span-2">
                   <ImageIcon className="text-slate-200 w-12 h-12 mb-4" />
                   <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Sem rascunhos para este filtro</p>
                 </div>
