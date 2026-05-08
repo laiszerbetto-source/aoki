@@ -25,7 +25,7 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 const INITIAL_CLIENTS = [
-  { id: 'geral', name: 'Visão Geral (Agência)', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
+  { id: 'geral', name: 'Visão Geral', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
   { id: 'c1', name: 'Grupo Aoki', handle: 'grupoaoki', color: 'from-slate-700 to-black' },
   { id: 'c2', name: 'Ford Aoki', handle: 'fordaoki', color: 'from-blue-600 to-blue-900' },
   { id: 'c3', name: 'Mercedes Aoki', handle: 'mercedesaoki', color: 'from-slate-300 to-slate-500' },
@@ -201,7 +201,7 @@ export default function App() {
     });
   };
 
-  const deletePost = async (id) => { if (confirm("Apagar rascunho permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id)); };
+  const deletePost = async (id) => { if (confirm("Apagar post permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id)); };
 
   const copyClientLink = () => {
     const url = new URL(window.location.href); url.searchParams.set('view', 'client');
@@ -284,7 +284,7 @@ export default function App() {
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start content-start">
               {filteredPosts.length === 0 ? (
-                <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center lg:col-span-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
+                <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center lg:col-span-2 text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem posts</div>
               ) : (
                 filteredPosts.map(post => (
                   <div key={post.id} onClick={() => { setPreviewPost(post); setPreviewPlatform(post.platforms[0]); }} className={`bg-white p-6 rounded-[2.5rem] border transition-all cursor-pointer hover:shadow-2xl relative ${previewPost?.id === post.id ? 'border-indigo-500 ring-4 ring-indigo-50' : 'border-slate-200 shadow-sm'}`}>
@@ -583,7 +583,7 @@ export default function App() {
     <div className="hidden print:block bg-white p-8 font-sans">
       <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 mb-1">Relatório de Rascunhos</h1>
+          <h1 className="text-3xl font-black text-slate-900 mb-1">Relatório de Posts</h1>
           <h2 className="text-lg font-bold text-slate-500">{currentClient?.name}</h2>
         </div>
         <div className="text-right">
