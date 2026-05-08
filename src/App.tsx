@@ -6,7 +6,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   CheckCircle2, XCircle, Clock, Send, Instagram, Facebook, Linkedin, 
   Plus, Trash2, Smartphone, Eye, Copy, Image as ImageIcon, Film, 
-  Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2, Share, ChevronLeft, ChevronRight, LayoutGrid
+  Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2, Share, ChevronLeft, ChevronRight, LayoutGrid, FileDown, SendHorizonal
 } from 'lucide-react';
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
@@ -33,7 +33,7 @@ const INITIAL_CLIENTS = [
   { id: 'c5', name: 'NAKI Autopeças', handle: 'nakiautopecas', color: 'from-red-600 to-red-800' }
 ];
 
-// --- COMPONENTE DE CARROSSEL INSTAGRAM-STYLE ---
+// --- COMPONENTE DE CARROSSEL ---
 const MediaCarousel = ({ media, isPreview = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const mediaArr = Array.isArray(media) ? media : (media ? [media] : []);
@@ -42,51 +42,28 @@ const MediaCarousel = ({ media, isPreview = false }) => {
     return <div className="w-full h-full flex items-center justify-center bg-slate-50"><ImageIcon size={24} className="text-slate-200" /></div>;
   }
 
-  const next = (e) => {
-    e.stopPropagation();
-    if (currentIndex < mediaArr.length - 1) setCurrentIndex(prev => prev + 1);
-  };
-
-  const prev = (e) => {
-    e.stopPropagation();
-    if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
-  };
+  const next = (e) => { e.stopPropagation(); if (currentIndex < mediaArr.length - 1) setCurrentIndex(prev => prev + 1); };
+  const prev = (e) => { e.stopPropagation(); if (currentIndex > 0) setCurrentIndex(prev => prev - 1); };
 
   return (
     <div className="relative w-full h-full group/carousel overflow-hidden bg-white rounded-inherit">
       <div className="flex w-full h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
         {mediaArr.map((m, i) => (
           <div key={i} className="w-full h-full shrink-0 flex items-center justify-center relative bg-white">
-            {m.type === 'video' ? (
-              <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center">
-                <Film size={20} />
-              </div>
-            ) : (
-              <img src={m.url} className={`w-full h-full object-contain ${!isPreview && 'p-1'}`} />
-            )}
+            {m.type === 'video' ? <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center"><Film size={20} /></div> : <img src={m.url} className={`w-full h-full object-contain ${!isPreview && 'p-1'}`} />}
           </div>
         ))}
       </div>
-
       {mediaArr.length > 1 && (
         <>
-          <button type="button" onClick={prev} className={`absolute left-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}>
-            <ChevronLeft size={isPreview ? 20 : 14} />
-          </button>
-          <button type="button" onClick={next} className={`absolute right-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}>
-            <ChevronRight size={isPreview ? 20 : 14} />
-          </button>
-          
+          <button type="button" onClick={prev} className={`absolute left-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}><ChevronLeft size={isPreview ? 20 : 14} /></button>
+          <button type="button" onClick={next} className={`absolute right-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}><ChevronRight size={isPreview ? 20 : 14} /></button>
           {isPreview ? (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-black/30 backdrop-blur-md rounded-full">
-              {mediaArr.map((_, i) => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />
-              ))}
+              {mediaArr.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />)}
             </div>
           ) : (
-            <span className="absolute top-1 right-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md z-10 backdrop-blur-sm">
-              {currentIndex + 1}/{mediaArr.length}
-            </span>
+            <span className="absolute top-1 right-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md z-10 backdrop-blur-sm">{currentIndex + 1}/{mediaArr.length}</span>
           )}
         </>
       )}
@@ -108,6 +85,10 @@ export default function App() {
   const [isClientView, setIsClientView] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
+  // Estado do Chat de Feedback
+  const [feedbackPost, setFeedbackPost] = useState(null);
+  const [newFeedbackMessage, setNewFeedbackMessage] = useState('');
+
   const [draggedMediaIdx, setDraggedMediaIdx] = useState(null);
 
   const [formState, setFormState] = useState({
@@ -127,17 +108,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (currentClient) {
-      document.title = isClientView ? `Aprovação: ${currentClient.name} | Aoki` : `${currentClient.name} | SocialFlow Aoki`;
-    }
+    if (currentClient) document.title = isClientView ? `Aprovação: ${currentClient.name} | Aoki` : `${currentClient.name} | SocialFlow Aoki`;
   }, [currentClient, isClientView]);
 
   useEffect(() => {
     signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (!u) setIsLoading(false);
-    });
+    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
     return () => unsubscribe();
   }, []);
 
@@ -160,6 +136,12 @@ export default function App() {
       setPreviewPost(clientPosts[0] || null);
       if (clientPosts[0]) setPreviewPlatform(clientPosts[0].platforms[0]);
     }
+    
+    // Atualiza o modal de feedback em tempo real se novos comentários chegarem
+    if (feedbackPost) {
+      const updatedPost = posts.find(p => p.id === feedbackPost.id);
+      if (updatedPost) setFeedbackPost(updatedPost);
+    }
   }, [activeClientId, posts]);
 
   const filteredPosts = posts.filter(p => {
@@ -172,19 +154,8 @@ export default function App() {
     const files = Array.from(e.target.files);
     setUploadError('');
     if (files.length === 0) return;
-    
-    const newMedia = files.map(file => ({
-      type: file.type.startsWith('video') ? 'video' : 'image',
-      url: URL.createObjectURL(file),
-      file: file
-    }));
-
-    setFormState(prev => ({
-      ...prev,
-      media: prev.postType === 'carrossel' 
-        ? [...(Array.isArray(prev.media) ? prev.media : (prev.media ? [prev.media] : [])), ...newMedia] 
-        : newMedia[0]
-    }));
+    const newMedia = files.map(file => ({ type: file.type.startsWith('video') ? 'video' : 'image', url: URL.createObjectURL(file), file: file }));
+    setFormState(prev => ({ ...prev, media: prev.postType === 'carrossel' ? [...(Array.isArray(prev.media) ? prev.media : (prev.media ? [prev.media] : [])), ...newMedia] : newMedia[0] }));
   };
 
   const handleSubmit = async (e) => {
@@ -194,11 +165,9 @@ export default function App() {
 
     try {
       let finalMediaData = null;
-
       if (formState.media) {
         const mediaArray = Array.isArray(formState.media) ? formState.media : [formState.media];
         const processedMedia = [];
-
         for (const m of mediaArray) {
           if (m.file) {
             const fileRef = ref(storage, `agencias/aoki/posts/${Date.now()}_${m.file.name}`);
@@ -214,23 +183,14 @@ export default function App() {
 
       const id = editingId || Date.now().toString();
       await setDoc(doc(db, 'agencias', 'aoki', 'posts', id), {
-        ...formState,
-        media: finalMediaData,
-        clientId: activeClientId === 'geral' ? 'c1' : activeClientId,
+        ...formState, media: finalMediaData, clientId: activeClientId === 'geral' ? 'c1' : activeClientId,
         status: editingId ? (posts.find(p => p.id === editingId)?.status || 'pendente') : 'pendente',
         date: editingId ? posts.find(p => p.id === editingId).date : new Date().toISOString(),
-        feedback: ''
       }, { merge: true });
 
-      setIsModalOpen(false);
-      setEditingId(null);
+      setIsModalOpen(false); setEditingId(null);
       setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' });
-    } catch (err) {
-      console.error(err);
-      setUploadError("Erro ao guardar.");
-    } finally {
-      setIsUploading(false);
-    }
+    } catch (err) { setUploadError("Erro ao guardar."); } finally { setIsUploading(false); }
   };
 
   const removeMedia = (index) => {
@@ -241,34 +201,37 @@ export default function App() {
     });
   };
 
-  const deletePost = async (id) => {
-    if (confirm("Apagar rascunho permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id));
-  };
+  const deletePost = async (id) => { if (confirm("Apagar rascunho permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id)); };
 
   const copyClientLink = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('view', 'client');
-    const textArea = document.createElement("textarea");
-    textArea.value = url.toString();
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textArea);
+    const url = new URL(window.location.href); url.searchParams.set('view', 'client');
+    const textArea = document.createElement("textarea"); textArea.value = url.toString();
+    document.body.appendChild(textArea); textArea.select(); document.execCommand('copy'); document.body.removeChild(textArea);
     alert("Link copiado!");
   };
 
+  const handleSendFeedback = async (e) => {
+    e.preventDefault();
+    if (!newFeedbackMessage.trim() || !feedbackPost) return;
+    const authorRole = isClientView ? 'Cliente' : 'Agência';
+    const newMsg = { text: newFeedbackMessage.trim(), author: authorRole, date: new Date().toISOString() };
+    const updatedFeedbacks = [...(feedbackPost.feedbacks || []), newMsg];
+    await setDoc(doc(db, 'agencias', 'aoki', 'posts', feedbackPost.id), { feedbacks: updatedFeedbacks }, { merge: true });
+    setNewFeedbackMessage('');
+  };
+
   const getDaysInMonth = (date) => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const days = new Date(year, month + 1, 0).getDate();
+    const year = date.getFullYear(); const month = date.getMonth();
+    const firstDay = new Date(year, month, 1).getDay(); const days = new Date(year, month + 1, 0).getDate();
     return { firstDay, days };
   };
 
   if (isLoading) return <div className="h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse text-xl"><Loader2 className="animate-spin mr-3" /> Sincronizando Flow...</div>;
 
   return (
-    <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden">
+    <>
+    {/* APP NORMAL (ESCONDIDO NA IMPRESSÃO) */}
+    <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden">
       
       {/* SIDEBAR */}
       <aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-8 max-h-[45vh] md:max-h-none md:h-full overflow-y-auto overflow-x-hidden z-20 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">  
@@ -299,6 +262,7 @@ export default function App() {
 
         {!isClientView && (
           <div className="mt-auto space-y-3">
+             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all text-xs border border-slate-200"><FileDown size={16} /> Exportar PDF</button>
              <button onClick={copyClientLink} className="w-full bg-slate-100 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-all text-xs border border-slate-200"><Share size={16} /> Link p/ Cliente</button>
              <button onClick={() => { setEditingId(null); setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' }); setIsModalOpen(true); }} className="w-full bg-indigo-600 text-white py-4 rounded-[2rem] font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-xl"><Plus size={20} /> Novo Post</button>
           </div>
@@ -337,9 +301,8 @@ export default function App() {
                       <div className="flex flex-col items-end gap-2">
                         <div className="flex gap-2">
                           <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{post.postType}</span>
-                          <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
+                          <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
                         </div>
-                        {/* DATA E HORA DE VOLTA AQUI! */}
                         <span className="text-[10px] text-indigo-600 font-black flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">
                           <Calendar size={14} /> {post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}
                         </span>
@@ -359,6 +322,12 @@ export default function App() {
 
                     <div className="flex items-center justify-between gap-1.5 mt-6 pt-6 border-t border-slate-50 overflow-hidden">
                       <div className="flex items-center gap-1 min-w-0">
+                        {/* BOTÃO DO CHAT DE FEEDBACK */}
+                        <button onClick={(e) => { e.stopPropagation(); setFeedbackPost(post); }} className="p-1.5 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-50 border border-slate-100 transition-all flex-shrink-0 relative">
+                          <MessageSquare size={16} />
+                          {post.feedbacks?.length > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-white"></span>}
+                        </button>
+                        
                         {!isClientView && (
                           <>
                             <button onClick={(e) => { e.stopPropagation(); setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-1.5 bg-slate-50 text-slate-500 rounded-xl hover:bg-indigo-50 border border-slate-100 transition-all flex-shrink-0"><Edit3 size={16} /></button>
@@ -482,6 +451,7 @@ export default function App() {
         )}
       </main>
 
+      {/* MODAL DE NOVO/EDITAR POST */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
@@ -513,39 +483,21 @@ export default function App() {
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Mídia (Arraste p/ Reordenar)</label>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
-                    
                     <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
                       <div onClick={() => fileInputRef.current.click()} className="h-24 w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
                         <Plus size={24} className="text-indigo-500 mb-1" />
                         <span className="text-[9px] font-black text-slate-500 uppercase">Upload</span>
                       </div>
-                      
                       {(() => {
                         const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
                         return mArr.map((m, i) => (
                           <div 
-                            key={i} 
-                            draggable
-                            onDragStart={() => setDraggedMediaIdx(i)}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              if (draggedMediaIdx === null || draggedMediaIdx === i) return;
-                              setFormState(prev => {
-                                const newMedia = [...prev.media];
-                                const temp = newMedia[draggedMediaIdx];
-                                newMedia.splice(draggedMediaIdx, 1);
-                                newMedia.splice(i, 0, temp);
-                                return { ...prev, media: newMedia };
-                              });
-                              setDraggedMediaIdx(null);
-                            }}
+                            key={i} draggable onDragStart={() => setDraggedMediaIdx(i)} onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => { e.preventDefault(); if (draggedMediaIdx === null || draggedMediaIdx === i) return; setFormState(prev => { const newMedia = [...prev.media]; const temp = newMedia[draggedMediaIdx]; newMedia.splice(draggedMediaIdx, 1); newMedia.splice(i, 0, temp); return { ...prev, media: newMedia }; }); setDraggedMediaIdx(null); }}
                             className="h-24 w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 group/item cursor-grab active:cursor-grabbing"
                           >
                             <img src={m.url} className="w-full h-full object-cover pointer-events-none" />
-                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm">
-                              <button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-2 rounded-xl hover:scale-110 transition-transform"><Trash2 size={16} /></button>
-                            </div>
+                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm"><button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-2 rounded-xl hover:scale-110 transition-transform"><Trash2 size={16} /></button></div>
                             <span className="absolute top-1 left-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md pointer-events-none">{i + 1}</span>
                           </div>
                         ));
@@ -584,6 +536,95 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* MODAL DE CHAT DE FEEDBACK */}
+      {feedbackPost && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[600px] max-h-[90vh]">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h2 className="text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={18} className="text-indigo-500" /> Chat do Post</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {feedbackPost.status}</p>
+              </div>
+              <button onClick={() => setFeedbackPost(null)} className="p-2 bg-white rounded-xl text-slate-400 shadow-sm"><XCircle size={20} /></button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-white">
+              {(!feedbackPost.feedbacks || feedbackPost.feedbacks.length === 0) ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-300 space-y-2 opacity-50">
+                  <MessageSquare size={32} />
+                  <p className="text-xs font-bold uppercase tracking-widest">Sem mensagens</p>
+                </div>
+              ) : (
+                feedbackPost.feedbacks.map((msg, i) => {
+                  const isMine = (isClientView && msg.author === 'Cliente') || (!isClientView && msg.author === 'Agência');
+                  return (
+                    <div key={i} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                      <span className="text-[9px] font-black text-slate-400 uppercase mb-1">{msg.author} • {new Date(msg.date).toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})}</span>
+                      <div className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm font-medium leading-relaxed shadow-sm ${isMine ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'}`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            <form onSubmit={handleSendFeedback} className="p-4 border-t border-slate-100 bg-slate-50 flex gap-2">
+              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Escreva o seu comentário..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium outline-none focus:border-indigo-500 transition-colors" />
+              <button type="submit" disabled={!newFeedbackMessage.trim()} className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all flex-shrink-0"><SendHorizonal size={20} /></button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
+
+    {/* LAYOUT EXCLUSIVO PARA IMPRESSÃO/PDF (SÓ APARECE AO IMPRIMIR) */}
+    <div className="hidden print:block bg-white p-8 font-sans">
+      <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 mb-1">Relatório de Rascunhos</h1>
+          <h2 className="text-lg font-bold text-slate-500">{currentClient?.name}</h2>
+        </div>
+        <div className="text-right">
+          <p className="text-sm font-bold text-slate-400">Data de Geração</p>
+          <p className="text-lg font-black text-slate-900">{new Date().toLocaleDateString('pt-PT')}</p>
+        </div>
+      </div>
+
+      <div className="space-y-12">
+        {filteredPosts.length === 0 ? (
+          <p className="text-center text-slate-400 font-bold">Não existem posts no filtro atual para exportar.</p>
+        ) : (
+          filteredPosts.map(post => (
+            <div key={post.id} className="break-inside-avoid border border-slate-200 p-6 rounded-2xl">
+              <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-100">
+                <div className="flex gap-3">
+                  <span className="font-black text-xs uppercase bg-slate-100 px-2 py-1 rounded text-slate-600">{post.platforms.join(' • ')}</span>
+                  <span className="font-black text-xs uppercase bg-slate-100 px-2 py-1 rounded text-slate-600">{post.postType}</span>
+                </div>
+                <span className="font-black text-sm text-indigo-600">{post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}</span>
+              </div>
+              
+              <div className="flex gap-6">
+                {post.media && (
+                  <div className="w-48 shrink-0">
+                    <img src={Array.isArray(post.media) ? post.media[0].url : post.media.url} className="w-full h-auto rounded-lg" />
+                    {Array.isArray(post.media) && post.media.length > 1 && <p className="text-xs font-bold text-slate-400 mt-2 text-center">+ {post.media.length - 1} imagem(ns)</p>}
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-800 whitespace-pre-wrap leading-relaxed">{post.content}</p>
+                  <p className="text-sm font-bold text-indigo-600 mt-4">{post.hashtags}</p>
+                  
+                  <div className="mt-4 inline-block px-3 py-1 bg-slate-100 rounded-md text-xs font-black uppercase text-slate-500">Status: {post.status}</div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+    </>
   );
 }
