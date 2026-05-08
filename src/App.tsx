@@ -280,7 +280,7 @@ export default function App() {
         {/* --- VIEW: FEED --- */}
         {mainView === 'feed' && (
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-10">
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-3xl w-full">
               {filteredPosts.length === 0 ? (
                 <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center">
                   <ImageIcon className="text-slate-200 w-12 h-12 mb-4" />
