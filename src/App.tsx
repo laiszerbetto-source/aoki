@@ -31,6 +31,84 @@ const INITIAL_CLIENTS = [
   { id: 'c5', name: 'NAKI Autopeças', handle: 'nakiautopecas', color: 'from-red-600 to-red-800' }
 ];
 
+// --- COMPONENTE DE CARROSSEL INSTAGRAM-STYLE ---
+const MediaCarousel = ({ media, isPreview = false }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const mediaArr = Array.isArray(media) ? media : (media ? [media] : []);
+
+  if (mediaArr.length === 0) {
+    return <div className="w-full h-full flex items-center justify-center bg-slate-50"><ImageIcon size={24} className="text-slate-200" /></div>;
+  }
+
+  const next = (e) => {
+    e.stopPropagation();
+    if (currentIndex < mediaArr.length - 1) setCurrentIndex(prev => prev + 1);
+  };
+
+  const prev = (e) => {
+    e.stopPropagation();
+    if (currentIndex > 0) setCurrentIndex(prev => prev - 1);
+  };
+
+  return (
+    <div className="relative w-full h-full group/carousel overflow-hidden bg-white rounded-inherit">
+      {/* Trilha de Imagens Deslizante */}
+      <div 
+        className="flex w-full h-full transition-transform duration-300 ease-out"
+        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+      >
+        {mediaArr.map((m, i) => (
+          <div key={i} className="w-full h-full shrink-0 flex items-center justify-center relative bg-white">
+            {m.type === 'video' ? (
+              <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center">
+                <Film size={20} />
+              </div>
+            ) : (
+              <img src={m.url} className={`w-full h-full object-contain ${!isPreview && 'p-1'}`} />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Controles do Carrossel */}
+      {mediaArr.length > 1 && (
+        <>
+          {/* Seta Esquerda */}
+          <button 
+            type="button" 
+            onClick={prev} 
+            className={`absolute left-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}
+          >
+            <ChevronLeft size={isPreview ? 20 : 14} />
+          </button>
+          
+          {/* Seta Direita */}
+          <button 
+            type="button" 
+            onClick={next} 
+            className={`absolute right-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}
+          >
+            <ChevronRight size={isPreview ? 20 : 14} />
+          </button>
+          
+          {/* Bolinhas no celular, Contagem no feed */}
+          {isPreview ? (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-black/30 backdrop-blur-md rounded-full">
+              {mediaArr.map((_, i) => (
+                <div key={i} className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />
+              ))}
+            </div>
+          ) : (
+            <span className="absolute top-1 right-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md z-10 backdrop-blur-sm">
+              {currentIndex + 1}/{mediaArr.length}
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -272,23 +350,11 @@ export default function App() {
                     </div>
 
                     <div className="flex gap-6 items-start">
-                      {/* MINIATURA DO FEED EM 4:5 (1080x1350) */}
-                      <div className="w-28 aspect-[4/5] shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner">
-                        {(() => {
-                          const mediaArr = Array.isArray(post.media) ? post.media : (post.media ? [post.media] : []);
-                          if (mediaArr.length === 0) return <div className="w-full h-full flex items-center justify-center"><ImageIcon size={24} className="text-slate-200" /></div>;
-                          return (
-                            <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full scrollbar-hide items-center">
-                              {mediaArr.map((m, i) => (
-                                <div key={i} className="w-full h-full shrink-0 snap-center flex items-center justify-center relative">
-                                  {m.type === 'video' ? <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center"><Film size={20} /></div> : <img src={m.url} className="w-full h-full object-contain p-1" />}
-                                  {mediaArr.length > 1 && <span className="absolute top-1 right-1 bg-slate-900/60 text-white text-[8px] font-black px-1 py-0.5 rounded-md">{i + 1}/{mediaArr.length}</span>}
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        })()}
+                      {/* MINIATURA DO FEED USANDO O NOVO CARROSSEL INSTA-STYLE */}
+                      <div className="w-28 aspect-[4/5] shrink-0 rounded-2xl overflow-hidden border border-slate-100 relative shadow-inner">
+                        <MediaCarousel media={post.media} isPreview={false} />
                       </div>
+
                       <div className="flex-1 min-w-0">
                         {activeClientId === 'geral' && <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">{INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}</p>}
                         <p className="text-slate-700 text-sm font-medium line-clamp-3 mb-2 whitespace-pre-wrap">{post.content}</p>
@@ -313,7 +379,7 @@ export default function App() {
               )}
             </div>
 
-            {/* PREVIEW DO CELULAR COM CARROSSEL E BOLINHAS */}
+            {/* PREVIEW DO CELULAR */}
             <div className="hidden xl:block sticky top-10 space-y-6">
              {previewPost && (
                 <div className="flex justify-center gap-2 bg-white p-2 rounded-[1.5rem] border border-slate-200 shadow-sm w-fit mx-auto">
@@ -336,27 +402,12 @@ export default function App() {
                           <Smartphone size={14} className="text-slate-200" />
                        </div>
                        <div className="p-4">
-                         {/* CONTAINER DO CARROSSEL NO CELULAR */}
-                         <div className="relative group mb-4">
-                            <div className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-2xl shadow-sm border border-slate-100 bg-white aspect-[4/5]">
-                              {(() => {
-                                const mArr = Array.isArray(previewPost.media) ? previewPost.media : (previewPost.media ? [previewPost.media] : []);
-                                return mArr.map((m, i) => (
-                                  <div key={i} className="w-full shrink-0 snap-center flex items-center justify-center bg-slate-50">
-                                    {m.type === 'video' ? <video src={m.url} className="w-full h-full object-contain" /> : <img src={m.url} className="w-full h-full object-contain" />}
-                                  </div>
-                                ));
-                              })()}
-                            </div>
-                            {/* BOLINHAS (INDICADORES) DO CARROSSEL */}
-                            {Array.isArray(previewPost.media) && previewPost.media.length > 1 && (
-                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-black/20 backdrop-blur-md rounded-full">
-                                {previewPost.media.map((_, i) => (
-                                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/60 shadow-sm" />
-                                ))}
-                              </div>
-                            )}
+                         
+                         {/* CARROSSEL DO CELULAR COM O COMPONENTE NOVO */}
+                         <div className="relative group mb-4 rounded-2xl overflow-hidden shadow-sm border border-slate-100 bg-white aspect-[4/5]">
+                            <MediaCarousel media={previewPost.media} isPreview={true} />
                          </div>
+                         
                          <p className="text-[12.5px] text-slate-800 font-medium whitespace-pre-wrap">{previewPost.content}</p>
                          <p className="text-[12.5px] text-indigo-600 font-bold mt-2">{previewPost.hashtags}</p>
                        </div>
@@ -369,8 +420,76 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* --- VIEW: CALENDÁRIO --- */}
+        {mainView === 'calendario' && (
+          <div className="bg-white rounded-[3rem] border border-slate-200 overflow-hidden shadow-sm">
+            <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+               <div className="flex items-center gap-6">
+                  <button onClick={() => changeMonth(-1)} className="p-3 hover:bg-slate-50 rounded-full transition-all text-slate-400"><ChevronLeft /></button>
+                  <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">
+                    {currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <button onClick={() => changeMonth(1)} className="p-3 hover:bg-slate-50 rounded-full transition-all text-slate-400"><ChevronRight /></button>
+               </div>
+               <div className="flex gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm text-xs font-bold text-slate-600">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Aprovados
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm text-xs font-bold text-slate-600">
+                    <span className="w-2 h-2 rounded-full bg-amber-500"></span> Pendentes
+                  </div>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-100">
+              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
+                <div key={d} className="py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{d}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 auto-rows-[160px]">
+              {(() => {
+                const { firstDay, days } = getDaysInMonth(currentMonth);
+                const cells = [];
+                for (let i = 0; i < firstDay; i++) {
+                  cells.push(<div key={`empty-${i}`} className="border-r border-b border-slate-50 bg-slate-50/30"></div>);
+                }
+                for (let d = 1; d <= days; d++) {
+                  const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                  const dayPosts = filteredPosts.filter(p => p.scheduleDate === dateStr);
+                  
+                  cells.push(
+                    <div key={d} className="border-r border-b border-slate-100 p-3 flex flex-col gap-1.5 hover:bg-slate-50 transition-colors group">
+                      <span className="text-xs font-black text-slate-300 group-hover:text-indigo-600">{d}</span>
+                      <div className="flex-1 overflow-y-auto space-y-1.5 scrollbar-hide">
+                        {dayPosts.map(p => (
+                          <div 
+                            key={p.id}
+                            onClick={() => { setPreviewPost(p); setPreviewPlatform(p.platforms[0]); setMainView('feed'); }}
+                            className={`p-1.5 rounded-lg border flex flex-col gap-1 cursor-pointer transition-all hover:scale-[1.02] shadow-sm ${
+                              p.status === 'aprovado' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-amber-50/50 border-amber-100'
+                            }`}
+                          >
+                             <div className="flex justify-between items-center">
+                                <span className="text-[8px] font-black text-slate-500">{p.scheduleTime}</span>
+                                {p.media && <div className="w-4 h-4 rounded-sm overflow-hidden bg-slate-200"><img src={Array.isArray(p.media) ? p.media[0].url : p.media.url} className="w-full h-full object-cover" /></div>}
+                             </div>
+                             <p className="text-[8px] font-medium text-slate-700 line-clamp-2 leading-tight">{p.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+                return cells;
+              })()}
+            </div>
+          </div>
+        )}
       </main>
 
+      {/* Modal Novo/Editar */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
