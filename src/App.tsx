@@ -3,12 +3,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   CheckCircle2, XCircle, Clock, Send, Plus, Trash2, Smartphone, Eye, Copy, Image as ImageIcon, Film, 
   Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2, Share, ChevronLeft, ChevronRight, LayoutGrid, FileDown, SendHorizonal, Maximize2
 } from 'lucide-react';
 
-// --- ÍCONES DE REDES SOCIAIS (SVG Direto para evitar erros de versão) ---
+// --- ÍCONES DE REDES SOCIAIS (SVG Direto) ---
 const Instagram = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
 );
@@ -19,7 +20,7 @@ const Linkedin = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
 );
 
-// --- CONFIGURAÇÃO DO FIREBASE (Aoki) ---
+// --- CONFIGURAÇÃO DO FIREBASE (AOKI) ---
 const firebaseConfig = {
   apiKey: "AIzaSyARH2lOjbz9fQsOVJ25y-IQdzuMnfbfpRE",
   authDomain: "aoki-7a6ec.firebaseapp.com",
@@ -32,6 +33,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 const INITIAL_CLIENTS = [
   { id: 'geral', name: 'Visão Geral (Agência)', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
@@ -85,8 +87,6 @@ export default function App() {
   const [feedbackPost, setFeedbackPost] = useState(null);
   const [newFeedbackMessage, setNewFeedbackMessage] = useState('');
   const [zoomedPost, setZoomedPost] = useState(null);
-  const [previewPost, setPreviewPost] = useState(null);
-  const [previewPlatform, setPreviewPlatform] = useState('instagram');
   const [formState, setFormState] = useState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' });
 
   useEffect(() => {
@@ -106,20 +106,16 @@ export default function App() {
 
   const handleMediaUpload = (e) => {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
-      if (file.size > 1024 * 1024) { alert(`A imagem ${file.name} é maior que 1MB.`); return; }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newMedia = { type: file.type.startsWith('video') ? 'video' : 'image', url: reader.result };
-        setFormState(prev => ({
-          ...prev,
-          media: prev.postType === 'carrossel' 
-            ? [...(Array.isArray(prev.media) ? prev.media : (prev.media ? [prev.media] : [])), newMedia] 
-            : newMedia
-        }));
-      };
-      reader.readAsDataURL(file);
-    });
+    if (files.length === 0) return;
+    const newMedia = files.map(file => ({ 
+      type: file.type.startsWith('video') ? 'video' : 'image', 
+      url: URL.createObjectURL(file), 
+      file: file 
+    }));
+    setFormState(prev => ({ 
+      ...prev, 
+      media: prev.postType === 'carrossel' ? [...(Array.isArray(prev.media) ? prev.media : (prev.media ? [prev.media] : [])), ...newMedia] : newMedia[0] 
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -127,16 +123,29 @@ export default function App() {
     if (!formState.content.trim() || formState.platforms.length === 0) return;
     setIsUploading(true);
     try {
+      let finalMediaData = null;
+      if (formState.media) {
+        const mediaArray = Array.isArray(formState.media) ? formState.media : [formState.media];
+        const processedMedia = [];
+        for (const m of mediaArray) {
+          if (m.file) {
+            const fileRef = ref(storage, `agencias/aoki/posts/${Date.now()}_${m.file.name}`);
+            await uploadBytes(fileRef, m.file);
+            const downloadUrl = await getDownloadURL(fileRef);
+            processedMedia.push({ type: m.type, url: downloadUrl });
+          } else { processedMedia.push(m); }
+        }
+        finalMediaData = formState.postType === 'carrossel' ? processedMedia : processedMedia[0];
+      }
       const id = editingId || Date.now().toString();
       await setDoc(doc(db, 'agencias', 'aoki', 'posts', id), {
-        ...formState,
-        clientId: activeClientId === 'geral' ? 'c1' : activeClientId,
+        ...formState, media: finalMediaData, clientId: activeClientId === 'geral' ? 'c1' : activeClientId,
         status: editingId ? (posts.find(p => p.id === editingId)?.status || 'pendente') : 'pendente',
         date: editingId ? posts.find(p => p.id === editingId).date : new Date().toISOString(),
       }, { merge: true });
       setIsModalOpen(false); setEditingId(null);
       setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' });
-    } catch (err) { alert("Erro ao guardar."); } finally { setIsUploading(false); }
+    } catch (err) { alert("Erro de CORS ou permissão no Storage."); } finally { setIsUploading(false); }
   };
 
   const handleSendFeedback = async (e) => {
@@ -197,7 +206,7 @@ export default function App() {
         <header className="mb-10"><div className="flex items-center gap-2 mb-1"><div className={`w-4 h-4 rounded-lg bg-gradient-to-tr ${currentClient?.color}`} /><h2 className="text-3xl font-black text-slate-900 tracking-tight">{currentClient?.name}</h2></div><p className="text-slate-400 text-sm font-medium italic">Dashboard Aoki</p></header>
 
         {mainView === 'feed' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6 w-full items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start">
             {filteredPosts.map(post => (
               <div key={post.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all relative">
                 <div className="flex justify-between items-start mb-6">
@@ -218,7 +227,6 @@ export default function App() {
                 <div className="flex gap-6 items-start">
                   <div className="w-28 aspect-[4/5] shrink-0 rounded-2xl overflow-hidden border border-slate-100 relative bg-slate-50"><MediaCarousel media={post.media} /></div>
                   <div className="flex-1 min-w-0">
-                    {activeClientId === 'geral' && <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">{INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}</p>}
                     <p className="text-slate-700 text-sm font-medium line-clamp-3 mb-2 whitespace-pre-wrap">{post.content}</p>
                     <p className="text-indigo-600 text-[11px] font-black truncate">{post.hashtags}</p>
                   </div>
@@ -281,19 +289,18 @@ export default function App() {
 
       {/* MODAL ZOOM */}
       {zoomedPost && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-8" onClick={() => setZoomedPost(null)}>
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4" onClick={() => setZoomedPost(null)}>
           <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setZoomedPost(null)} className="absolute top-6 right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><XCircle size={24} /></button>
+            <button onClick={() => setZoomedPost(null)} className="absolute top-6 right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full"><XCircle size={24} /></button>
             <div className="w-full md:w-1/2 bg-slate-50 border-r border-slate-100 p-8 flex items-center justify-center min-h-[300px]"><div className="w-full max-w-sm aspect-[4/5] rounded-2xl overflow-hidden shadow-lg bg-white"><MediaCarousel media={zoomedPost.media} isPreview={true} /></div></div>
             <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto flex flex-col">
-               <div className="flex gap-2 mb-6"><span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{zoomedPost.postType}</span><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : zoomedPost.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span></div>
+               <div className="flex gap-2 mb-6"><span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{zoomedPost.postType}</span><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span></div>
                <h3 className="text-xl font-black text-slate-900 mb-2">Detalhes da Postagem</h3>
                <p className="text-sm font-bold text-indigo-600 flex items-center gap-2 mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={16} /> {zoomedPost.scheduleDate?.split('-').reverse().join('/')} às {zoomedPost.scheduleTime}</p>
                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-6 flex-1"><p className="text-sm text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">{zoomedPost.content}</p></div>
-               <p className="text-sm font-black text-indigo-600 mb-8">{zoomedPost.hashtags}</p>
                <div className="flex gap-2 mt-auto">
-                  <button onClick={() => { changeStatus(zoomedPost.id, 'aprovado'); setZoomedPost(null); }} className="flex-1 bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase">Aprovar Post</button>
-                  <button onClick={() => { changeStatus(zoomedPost.id, 'rejeitado'); setZoomedPost(null); }} className="flex-1 bg-rose-50 text-rose-600 py-4 rounded-2xl font-black text-xs hover:bg-rose-100 transition-colors uppercase">Rejeitar</button>
+                  <button onClick={() => { changeStatus(zoomedPost.id, 'aprovado'); setZoomedPost(null); }} className="flex-1 bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs shadow-lg uppercase">Aprovar Post</button>
+                  <button onClick={() => { changeStatus(zoomedPost.id, 'rejeitado'); setZoomedPost(null); }} className="flex-1 bg-rose-50 text-rose-600 py-4 rounded-2xl font-black text-xs hover:bg-rose-100 uppercase">Rejeitar</button>
                </div>
             </div>
           </div>
@@ -303,7 +310,7 @@ export default function App() {
       {/* MODAL NOVO POST */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="p-8 border-b border-slate-50 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-xl z-10">
               <h2 className="text-2xl font-black text-slate-900">{editingId ? 'Editar Post' : 'Novo Conteúdo'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:rotate-90 transition-all"><XCircle size={24} /></button>
@@ -320,22 +327,14 @@ export default function App() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Formato</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[{id:'estatico',icon:<Square size={16}/>,label:'Post'},{id:'carrossel',icon:<Layers size={16}/>,label:'Álbum'},{id:'reel',icon:<Film size={16}/>,label:'Vídeo'}].map(type => (
-                        <button key={type.id} type="button" onClick={() => setFormState({...formState, postType: type.id})} className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Mídia (Máx 1MB cada)</label>
-                    <input type="file" className="hidden" id="fileUp" onChange={handleMediaUpload} accept="image/*" multiple={formState.postType === 'carrossel'} />
-                    <label htmlFor="fileUp" className="h-24 w-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all"><Plus size={24} className="text-indigo-500 mb-1" /><span className="text-[9px] font-black text-slate-500 uppercase">Upload</span></label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Mídia (Upload p/ Storage)</label>
+                    <input type="file" className="hidden" id="fileUp" onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
+                    <label htmlFor="fileUp" className="h-24 w-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100"><Plus size={24} className="text-indigo-500 mb-1" /><span className="text-[9px] font-black text-slate-500 uppercase">Upload</span></label>
                     <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
                       {Array.isArray(formState.media) ? formState.media.map((m, i) => (
-                        <div key={i} className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={m.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: p.media.filter((_, idx) => idx !== i)}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg hover:scale-110 transition-transform"><Trash2 size={12} /></button></div>
+                        <div key={i} className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={m.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: p.media.filter((_, idx) => idx !== i)}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>
                       )) : formState.media && (
-                        <div className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={formState.media.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: null}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg hover:scale-110 transition-transform"><Trash2 size={12} /></button></div>
+                        <div className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={formState.media.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: null}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>
                       )}
                     </div>
                   </div>
@@ -348,13 +347,12 @@ export default function App() {
                       <input type="time" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} />
                     </div>
                   </div>
-                  <textarea required rows={5} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Legenda do post..."></textarea>
-                  <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
+                  <textarea required rows={5} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium outline-none resize-none" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Legenda do post..."></textarea>
                 </div>
               </div>
               <div className="flex gap-4 pt-6 border-t border-slate-50">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600">Sair</button>
-                <button type="submit" disabled={isUploading} className="flex-[2] flex items-center justify-center gap-2 py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all">{isUploading ? <><Loader2 size={16} className="animate-spin" /> A guardar...</> : (editingId ? 'Atualizar Post' : 'Publicar Conteúdo')}</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-slate-400 font-black text-[10px] uppercase">Sair</button>
+                <button type="submit" disabled={isUploading} className="flex-[2] flex items-center justify-center gap-2 py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-widest bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-xl">{isUploading ? <><Loader2 size={16} className="animate-spin" /> Carregando...</> : (editingId ? 'Atualizar Post' : 'Publicar Conteúdo')}</button>
               </div>
             </form>
           </div>
@@ -366,53 +364,27 @@ export default function App() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[600px] max-h-[90vh]">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <div><h2 className="text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={18} className="text-emerald-500" /> Chat do Post</h2><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {feedbackPost.status}</p></div>
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={18} className="text-emerald-500" /> Chat do Post</h2>
               <button onClick={() => setFeedbackPost(null)} className="p-2 bg-white rounded-xl text-slate-400 shadow-sm"><XCircle size={20} /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-white">
-              {(!feedbackPost.feedbacks || feedbackPost.feedbacks.length === 0) ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-300 space-y-2 opacity-50"><MessageSquare size={32} /><p className="text-xs font-bold uppercase tracking-widest">Sem mensagens</p></div>
-              ) : (
-                feedbackPost.feedbacks.map((msg, i) => {
-                  const isMine = (isClientView && msg.author === 'Cliente') || (!isClientView && msg.author === 'Agência');
-                  return (
-                    <div key={i} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-                      <span className="text-[9px] font-black text-slate-400 uppercase mb-1">{msg.author} • {new Date(msg.date).toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'})}</span>
-                      <div className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm font-medium leading-relaxed shadow-sm ${isMine ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'}`}>{msg.text}</div>
-                    </div>
-                  )
-                })
-              )}
+              {(feedbackPost.feedbacks || []).map((msg, i) => {
+                const isMine = (isClientView && msg.author === 'Cliente') || (!isClientView && msg.author === 'Agência');
+                return (
+                  <div key={i} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                    <span className="text-[9px] font-black text-slate-400 uppercase mb-1">{msg.author} • {new Date(msg.date).toLocaleTimeString('pt-PT', {hour:'2-digit', minute:'2-digit'})}</span>
+                    <div className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm font-medium leading-relaxed shadow-sm ${isMine ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'}`}>{msg.text}</div>
+                  </div>
+                )
+              })}
             </div>
             <form onSubmit={handleSendFeedback} className="p-4 border-t border-slate-100 bg-slate-50 flex gap-2">
-              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Escreva o seu comentário..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium outline-none focus:border-indigo-500 transition-colors" />
-              <button type="submit" disabled={!newFeedbackMessage.trim()} className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all flex-shrink-0"><SendHorizonal size={20} /></button>
+              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Escreva o seu comentário..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium outline-none" />
+              <button type="submit" disabled={!newFeedbackMessage.trim()} className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all"><SendHorizonal size={20} /></button>
             </form>
           </div>
         </div>
       )}
-    </div>
-
-    {/* LAYOUT PARA IMPRESSÃO/PDF */}
-    <div className="hidden print:block bg-white p-8 font-sans">
-      <div className="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-end">
-        <div><h1 className="text-3xl font-black text-slate-900 mb-1">Relatório de Rascunhos</h1><h2 className="text-lg font-bold text-slate-500">{currentClient?.name}</h2></div>
-        <div className="text-right"><p className="text-sm font-bold text-slate-400">Data de Geração</p><p className="text-lg font-black text-slate-900">{new Date().toLocaleDateString('pt-PT')}</p></div>
-      </div>
-      <div className="space-y-12">
-        {filteredPosts.map(post => (
-          <div key={post.id} className="break-inside-avoid border border-slate-200 p-6 rounded-2xl">
-            <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-100">
-               <div className="flex gap-3"><span className="font-black text-xs uppercase bg-slate-100 px-2 py-1 rounded text-slate-600">{post.platforms.join(' • ')}</span><span className="font-black text-xs uppercase bg-slate-100 px-2 py-1 rounded text-slate-600">{post.postType}</span></div>
-               <span className="font-black text-sm text-indigo-600">{post.scheduleDate?.split('-').reverse().join('/')} às {post.scheduleTime}</span>
-            </div>
-            <div className="flex gap-6">
-              {post.media && <div className="w-48 shrink-0"><img src={Array.isArray(post.media) ? post.media[0].url : post.media.url} className="w-full h-auto rounded-lg shadow-sm" /></div>}
-              <div className="flex-1"><p className="text-sm font-medium text-slate-800 whitespace-pre-wrap leading-relaxed">{post.content}</p><p className="text-sm font-bold text-indigo-600 mt-4">{post.hashtags}</p><div className="mt-4 inline-block px-3 py-1 bg-slate-100 rounded-md text-xs font-black uppercase text-slate-500">Status: {post.status}</div></div>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
     </>
   );
