@@ -320,9 +320,9 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="flex gap-6">
-                      <div className="w-24 h-24 rounded-[1.5rem] overflow-hidden bg-slate-100 shrink-0 border border-slate-100 relative shadow-inner">
-                        {post.media ? (post.media.type === 'video' ? <div className="w-full h-full flex items-center justify-center bg-slate-900 text-white opacity-40"><Film size={24} /></div> : <img src={post.media.url} className="w-full h-full object-cover" />) : <ImageIcon size={24} className="text-slate-200" />}
+<div className="flex gap-6">
+                      <div className="w-28 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner flex items-center justify-center">
+                        {post.media ? (post.media.type === 'video' ? <div className="w-full aspect-square flex items-center justify-center bg-slate-900 text-white opacity-40"><Film size={24} /></div> : <img src={post.media.url} className="w-full h-auto max-h-48 object-contain" />) : <div className="p-8"><ImageIcon size={24} className="text-slate-200" /></div>}
                       </div>
                       <div className="flex-1 min-w-0">
                         {activeClientId === 'geral' && (
