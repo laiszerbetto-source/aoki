@@ -20,7 +20,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
- db = getFirestore(app);
+const db = getFirestore(app); // CORRIGIDO: Faltava o 'const' aqui
 
 const INITIAL_CLIENTS = [
   { id: 'geral', name: 'Visão Geral (Agência)', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
@@ -36,15 +36,14 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState([]);
   const [activeClientId, setActiveClientId] = useState(INITIAL_CLIENTS[0].id);
-  const [activeTab, setActiveTab] = useState('todos'); // todos, pendente, aprovado, rejeitado
-  const [mainView, setMainView] = useState('feed'); // feed, calendario
+  const [activeTab, setActiveTab] = useState('todos');
+  const [mainView, setMainView] = useState('feed');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [uploadError, setUploadError] = useState('');
   const [copiedType, setCopiedType] = useState(null);
   const [isClientView, setIsClientView] = useState(false);
 
-  // Estados do Calendário
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const [formState, setFormState] = useState({
@@ -104,14 +103,13 @@ export default function App() {
     }
   }, [activeClientId, posts]);
 
-  // Filtro inteligente para Geral ou Cliente Específico
   const filteredPosts = posts.filter(p => {
     const clientMatch = activeClientId === 'geral' ? true : p.clientId === activeClientId;
     const statusMatch = activeTab === 'todos' || p.status === activeTab;
     return clientMatch && statusMatch;
   });
 
-const handleMediaUpload = async (e) => {
+  const handleMediaUpload = async (e) => {
     const files = Array.from(e.target.files);
     setUploadError('');
     if (files.length === 0) return;
@@ -134,7 +132,6 @@ const handleMediaUpload = async (e) => {
 
     setFormState(prev => ({
       ...prev,
-      // Se for carrossel soma com as que já tem, se não, pega só a primeira
       media: prev.postType === 'carrossel' 
         ? [...(Array.isArray(prev.media) ? prev.media : []), ...newMedia] 
         : newMedia[0]
@@ -148,7 +145,7 @@ const handleMediaUpload = async (e) => {
       const id = editingId || Date.now().toString();
       await setDoc(doc(db, 'agencias', 'aoki', 'posts', id), {
         ...formState,
-        clientId: activeClientId === 'geral' ? 'c1' : activeClientId, // Se criar na visão geral, assume Grupo Aoki
+        clientId: activeClientId === 'geral' ? 'c1' : activeClientId,
         status: editingId ? (posts.find(p => p.id === editingId)?.status || 'pendente') : 'pendente',
         date: editingId ? posts.find(p => p.id === editingId).date : new Date().toISOString(),
         feedback: ''
@@ -159,7 +156,8 @@ const handleMediaUpload = async (e) => {
       setUploadError("Erro ao guardar. Tente uma imagem mais leve.");
     }
   };
-const removeMedia = (index) => {
+
+  const removeMedia = (index) => {
     setFormState(prev => {
       const newMedia = Array.isArray(prev.media) ? [...prev.media] : [prev.media];
       newMedia.splice(index, 1);
@@ -177,6 +175,7 @@ const removeMedia = (index) => {
       return { ...prev, media: newMedia };
     });
   };
+
   const deletePost = async (id) => {
     if (confirm("Apagar rascunho?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id));
   };
@@ -204,7 +203,6 @@ const removeMedia = (index) => {
     alert("Link de aprovação copiado! Envie ao cliente.");
   };
 
-  // Funções Auxiliares de Calendário
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -223,8 +221,8 @@ const removeMedia = (index) => {
   return (
    <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden">
       {/* Sidebar */}
-<aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-8 max-h-[45vh] md:max-h-none md:h-full overflow-y-auto overflow-x-hidden z-20 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">  
-  <div className="flex items-center gap-3">
+      <aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-8 max-h-[45vh] md:max-h-none md:h-full overflow-y-auto overflow-x-hidden z-20 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">  
+        <div className="flex items-center gap-3">
           <div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100">
             <Send size={24} />
           </div>
@@ -290,7 +288,7 @@ const removeMedia = (index) => {
       </aside>
 
       {/* Main Content */}
-<main className="flex-1 h-full overflow-y-auto overflow-x-hidden p-5 md:p-10 min-w-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+      <main className="flex-1 h-full overflow-y-auto overflow-x-hidden p-5 md:p-10 min-w-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -308,11 +306,10 @@ const removeMedia = (index) => {
           </div>
         </header>
 
-{/* --- VIEW: FEED --- */}
+        {/* --- VIEW: FEED --- */}
         {mainView === 'feed' && (
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-10">
             
-            {/* A MÁGICA DAS 2 COLUNAS ACONTECE NESTA DIV ABAIXO: */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start content-start">
               
               {filteredPosts.length === 0 ? (
@@ -351,8 +348,8 @@ const removeMedia = (index) => {
                       </div>
                     </div>
 
-<div className="flex gap-6">
-         <div className="w-28 h-28 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner">
+                    <div className="flex gap-6">
+                      <div className="w-28 h-28 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner">
                         {(() => {
                           const mediaArr = Array.isArray(post.media) ? post.media : (post.media ? [post.media] : []);
                           if (mediaArr.length === 0) return <div className="w-full h-full flex items-center justify-center"><ImageIcon size={24} className="text-slate-200" /></div>;
@@ -369,9 +366,21 @@ const removeMedia = (index) => {
                           );
                         })()}
                       </div>
+                      
+                      {/* CORRIGIDO: Esta era a parte do texto que você tinha apagado! */}
+                      <div className="flex-1 min-w-0">
+                        {activeClientId === 'geral' && (
+                          <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">
+                            {INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}
+                          </p>
+                        )}
+                        <p className="text-slate-700 text-sm font-medium leading-relaxed line-clamp-3 mb-3 whitespace-pre-wrap">{post.content}</p>
+                        <p className="text-indigo-600 text-[11px] font-black tracking-tight truncate">{post.hashtags}</p>
+                      </div>
+
                     </div>
 
-       <div className="flex items-center justify-between gap-1.5 mt-6 pt-6 border-t border-slate-50 overflow-hidden">
+                    <div className="flex items-center justify-between gap-1.5 mt-6 pt-6 border-t border-slate-50 overflow-hidden">
                       <div className="flex items-center gap-1 flex-shrink-1 min-w-0">
                         {!isClientView && (
                           <>
@@ -410,13 +419,17 @@ const removeMedia = (index) => {
                 <div className="bg-white rounded-[3rem] h-full overflow-hidden flex flex-col relative shadow-inner">
                   {previewPost ? (
                     <div className="flex-1 overflow-y-auto bg-slate-50 pt-10 pb-24">
-                       {/* Render Preview Layouts... (Simplificado para o Canvas) */}
+                       {/* Render Preview Layouts... */}
                        <div className="bg-white px-5 py-4 border-b border-slate-50 flex items-center justify-between mb-2">
                           <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{previewPlatform}</span>
                           <Smartphone size={14} className="text-slate-200" />
                        </div>
                        <div className="p-4">
-                         {previewPost.media && <img src={previewPost.media.url} className="w-full rounded-2xl mb-4 shadow-sm border border-slate-100" />}
+                         {previewPost.media && (
+                           Array.isArray(previewPost.media) 
+                             ? <img src={previewPost.media[0].url} className="w-full rounded-2xl mb-4 shadow-sm border border-slate-100" /> 
+                             : <img src={previewPost.media.url} className="w-full rounded-2xl mb-4 shadow-sm border border-slate-100" />
+                         )}
                          <p className="text-[12.5px] text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">{previewPost.content}</p>
                          <p className="text-[12.5px] text-indigo-600 font-bold mt-2">{previewPost.hashtags}</p>
                        </div>
@@ -433,7 +446,6 @@ const removeMedia = (index) => {
         {/* --- VIEW: CALENDÁRIO --- */}
         {mainView === 'calendario' && (
           <div className="bg-white rounded-[3rem] border border-slate-200 overflow-hidden shadow-sm">
-            {/* Header Calendário */}
             <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
                <div className="flex items-center gap-6">
                   <button onClick={() => changeMonth(-1)} className="p-3 hover:bg-slate-50 rounded-full transition-all text-slate-400"><ChevronLeft /></button>
@@ -452,7 +464,6 @@ const removeMedia = (index) => {
                </div>
             </div>
 
-            {/* Grelha de Dias */}
             <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-100">
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
                 <div key={d} className="py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{d}</div>
@@ -463,11 +474,9 @@ const removeMedia = (index) => {
               {(() => {
                 const { firstDay, days } = getDaysInMonth(currentMonth);
                 const cells = [];
-                // Células vazias iniciais
                 for (let i = 0; i < firstDay; i++) {
                   cells.push(<div key={`empty-${i}`} className="border-r border-b border-slate-50 bg-slate-50/30"></div>);
                 }
-                // Dias do mês
                 for (let d = 1; d <= days; d++) {
                   const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                   const dayPosts = filteredPosts.filter(p => p.scheduleDate === dateStr);
@@ -486,7 +495,7 @@ const removeMedia = (index) => {
                           >
                              <div className="flex justify-between items-center">
                                 <span className="text-[8px] font-black text-slate-500">{p.scheduleTime}</span>
-                                {p.media && <div className="w-4 h-4 rounded-sm overflow-hidden bg-slate-200"><img src={p.media.url} className="w-full h-full object-cover" /></div>}
+                                {p.media && <div className="w-4 h-4 rounded-sm overflow-hidden bg-slate-200"><img src={Array.isArray(p.media) ? p.media[0].url : p.media.url} className="w-full h-full object-cover" /></div>}
                              </div>
                              <p className="text-[8px] font-medium text-slate-700 line-clamp-2 leading-tight">{p.content}</p>
                           </div>
@@ -529,25 +538,22 @@ const removeMedia = (index) => {
                       ))}
                     </div>
                   </div>
-            <div>
+                  <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Midia (Máx. 5MB) {formState.postType === 'carrossel' && <span className="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-[8px]">Múltiplos</span>}</label>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
                     
                     <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
-                      {/* Botão Fixo de Upload */}
                       <div onClick={() => fileInputRef.current.click()} className="h-24 w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
                         <Plus size={24} className="text-indigo-500 mb-1" />
                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Upload</span>
                       </div>
 
-                      {/* Lista de Imagens com Controles (Hover) */}
                       {(() => {
                         const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
                         return mArr.map((m, i) => (
                           <div key={i} className="h-24 w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 shadow-sm group/item">
                             <img src={m.url} className="w-full h-full object-cover" />
                             
-                            {/* Overlay de Ações (Aparece no Hover) */}
                             <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-sm">
                               <button type="button" onClick={(e) => { e.stopPropagation(); removeMedia(i); }} className="bg-rose-500 text-white p-1.5 rounded-lg hover:bg-rose-600 transition-colors shadow-sm"><Trash2 size={12} /></button>
                               
@@ -557,7 +563,6 @@ const removeMedia = (index) => {
                               </div>
                             </div>
                             
-                            {/* Emblema de Numeração */}
                             <span className="absolute top-1.5 left-1.5 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md">{i + 1}</span>
                           </div>
                         ));
