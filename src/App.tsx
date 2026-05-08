@@ -355,10 +355,10 @@ export default function App() {
 
             {/* Preview Lateral Smartphone */}
             <div className="hidden xl:block sticky top-10 space-y-6">
-              {previewPost && (
-                <div className="flex gap-1.5 bg-white p-2 rounded-[1.5rem] border border-slate-200 shadow-sm">
+             {previewPost && (
+                <div className="flex justify-center gap-2 bg-white p-2 rounded-[1.5rem] border border-slate-200 shadow-sm w-fit mx-auto">
                   {previewPost.platforms.map(plt => (
-                    <button key={plt} onClick={() => setPreviewPlatform(plt)} className={`flex-1 flex items-center justify-center py-3 rounded-xl transition-all ${previewPlatform === plt ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
+                    <button key={plt} onClick={() => setPreviewPlatform(plt)} className={`w-20 flex items-center justify-center py-3 rounded-xl transition-all ${previewPlatform === plt ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}>
                       {plt === 'instagram' && <Instagram size={18} />}
                       {plt === 'facebook' && <Facebook size={18} />}
                       {plt === 'linkedin' && <Linkedin size={18} />}
