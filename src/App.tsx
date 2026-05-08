@@ -111,20 +111,34 @@ export default function App() {
     return clientMatch && statusMatch;
   });
 
-  const handleMediaUpload = (e) => {
-    const file = e.target.files[0];
+const handleMediaUpload = async (e) => {
+    const files = Array.from(e.target.files);
     setUploadError('');
-    if (file) {
-      if (file.size > 5000000) {
-        setUploadError('Ficheiro demasiado grande (Máximo 5MB).');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormState({ ...formState, media: { type: file.type.startsWith('video') ? 'video' : 'image', url: reader.result } });
-      };
-      reader.readAsDataURL(file);
+    if (files.length === 0) return;
+
+    if (files.some(f => f.size > 5000000)) {
+      setUploadError('Ficheiros demasiado grandes (Máx 5MB).');
+      return;
     }
+
+    const readMedia = (file) => new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve({
+        type: file.type.startsWith('video') ? 'video' : 'image',
+        url: reader.result
+      });
+      reader.readAsDataURL(file);
+    });
+
+    const newMedia = await Promise.all(files.map(readMedia));
+
+    setFormState(prev => ({
+      ...prev,
+      // Se for carrossel soma com as que já tem, se não, pega só a primeira
+      media: prev.postType === 'carrossel' 
+        ? [...(Array.isArray(prev.media) ? prev.media : []), ...newMedia] 
+        : newMedia[0]
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -321,17 +335,23 @@ export default function App() {
                     </div>
 
 <div className="flex gap-6">
-                      <div className="w-28 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner flex items-center justify-center">
-                        {post.media ? (post.media.type === 'video' ? <div className="w-full aspect-square flex items-center justify-center bg-slate-900 text-white opacity-40"><Film size={24} /></div> : <img src={post.media.url} className="w-full h-auto max-h-48 object-contain" />) : <div className="p-8"><ImageIcon size={24} className="text-slate-200" /></div>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        {activeClientId === 'geral' && (
-                          <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">
-                            {INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}
-                          </p>
-                        )}
-                        <p className="text-slate-700 text-sm font-medium leading-relaxed line-clamp-3 mb-3 whitespace-pre-wrap">{post.content}</p>
-                        <p className="text-indigo-600 text-[11px] font-black tracking-tight truncate">{post.hashtags}</p>
+           <div className="w-28 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner flex items-center justify-center">
+                        {(() => {
+                          const mediaArr = Array.isArray(post.media) ? post.media : (post.media ? [post.media] : []);
+                          
+                          if (mediaArr.length === 0) return <div className="p-8"><ImageIcon size={24} className="text-slate-200" /></div>;
+
+                          return (
+                            <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full scrollbar-hide">
+                              {mediaArr.map((m, i) => (
+                                <div key={i} className="w-full h-full shrink-0 snap-center flex items-center justify-center relative">
+                                  {m.type === 'video' ? <div className="w-full aspect-square flex items-center justify-center bg-slate-900 text-white opacity-40"><Film size={24} /></div> : <img src={m.url} className="w-full h-auto max-h-48 object-contain" />}
+                                  {mediaArr.length > 1 && <span className="absolute top-2 right-2 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md backdrop-blur-sm z-10">{i + 1}/{mediaArr.length}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -493,13 +513,22 @@ export default function App() {
                       ))}
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Midia (Máx. 5MB)</label>
-                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" />
-                    <div onClick={() => fileInputRef.current.click()} className={`aspect-video bg-slate-50 border-2 border-dashed rounded-[2.5rem] flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group transition-all ${uploadError ? 'border-red-400' : 'border-slate-200'}`}>
-                      {formState.media ? <img src={formState.media.url} className="w-full h-full object-cover" /> : (
-                        <div className="text-center group-hover:scale-110 transition-transform"><Plus size={32} className="text-indigo-500 mx-auto mb-2" /><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Upload</p></div>
-                      )}
+               <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Midia (Máx. 5MB) {formState.postType === 'carrossel' && <span className="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-[8px]">Múltiplos</span>}</label>
+                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
+                    <div onClick={() => fileInputRef.current.click()} className={`min-h-[120px] bg-slate-50 border-2 border-dashed rounded-[2.5rem] p-4 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group transition-all ${uploadError ? 'border-red-400' : 'border-slate-200'}`}>
+                      {(() => {
+                        const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
+                        if (mArr.length === 0) return <div className="text-center group-hover:scale-110 transition-transform"><Plus size={32} className="text-indigo-500 mx-auto mb-2" /><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Upload</p></div>;
+                        
+                        return (
+                          <div className="flex gap-3 overflow-x-auto w-full snap-x pb-2 scrollbar-hide">
+                            {mArr.map((m, i) => (
+                              <img key={i} src={m.url} className="h-24 w-24 object-cover rounded-xl shrink-0 snap-center shadow-sm border border-slate-200" />
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                     {uploadError && <p className="text-red-500 text-[10px] font-bold mt-3">{uploadError}</p>}
                   </div>
