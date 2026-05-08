@@ -20,7 +20,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+ db = getFirestore(app);
 
 const INITIAL_CLIENTS = [
   { id: 'geral', name: 'Visão Geral (Agência)', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
@@ -159,7 +159,24 @@ const handleMediaUpload = async (e) => {
       setUploadError("Erro ao guardar. Tente uma imagem mais leve.");
     }
   };
+const removeMedia = (index) => {
+    setFormState(prev => {
+      const newMedia = Array.isArray(prev.media) ? [...prev.media] : [prev.media];
+      newMedia.splice(index, 1);
+      return { ...prev, media: newMedia.length > 0 ? newMedia : null };
+    });
+  };
 
+  const moveMedia = (index, direction) => {
+    setFormState(prev => {
+      const newMedia = Array.isArray(prev.media) ? [...prev.media] : [prev.media];
+      if (index + direction < 0 || index + direction >= newMedia.length) return prev;
+      const temp = newMedia[index];
+      newMedia[index] = newMedia[index + direction];
+      newMedia[index + direction] = temp;
+      return { ...prev, media: newMedia };
+    });
+  };
   const deletePost = async (id) => {
     if (confirm("Apagar rascunho?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id));
   };
@@ -335,18 +352,17 @@ const handleMediaUpload = async (e) => {
                     </div>
 
 <div className="flex gap-6">
-           <div className="w-28 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner flex items-center justify-center">
+         <div className="w-28 h-28 shrink-0 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 relative shadow-inner">
                         {(() => {
                           const mediaArr = Array.isArray(post.media) ? post.media : (post.media ? [post.media] : []);
-                          
-                          if (mediaArr.length === 0) return <div className="p-8"><ImageIcon size={24} className="text-slate-200" /></div>;
+                          if (mediaArr.length === 0) return <div className="w-full h-full flex items-center justify-center"><ImageIcon size={24} className="text-slate-200" /></div>;
 
                           return (
-                            <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full scrollbar-hide">
+                            <div className="flex overflow-x-auto snap-x snap-mandatory w-full h-full scrollbar-hide items-center">
                               {mediaArr.map((m, i) => (
                                 <div key={i} className="w-full h-full shrink-0 snap-center flex items-center justify-center relative">
-                                  {m.type === 'video' ? <div className="w-full aspect-square flex items-center justify-center bg-slate-900 text-white opacity-40"><Film size={24} /></div> : <img src={m.url} className="w-full h-auto max-h-48 object-contain" />}
-                                  {mediaArr.length > 1 && <span className="absolute top-2 right-2 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md backdrop-blur-sm z-10">{i + 1}/{mediaArr.length}</span>}
+                                  {m.type === 'video' ? <div className="w-full h-full flex items-center justify-center bg-slate-900 text-white opacity-40"><Film size={24} /></div> : <img src={m.url} className="w-full h-full object-contain p-1" />}
+                                  {mediaArr.length > 1 && <span className="absolute top-1 right-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md backdrop-blur-sm z-10">{i + 1}/{mediaArr.length}</span>}
                                 </div>
                               ))}
                             </div>
@@ -513,24 +529,41 @@ const handleMediaUpload = async (e) => {
                       ))}
                     </div>
                   </div>
-               <div>
+            <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Midia (Máx. 5MB) {formState.postType === 'carrossel' && <span className="bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full text-[8px]">Múltiplos</span>}</label>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
-                    <div onClick={() => fileInputRef.current.click()} className={`min-h-[120px] bg-slate-50 border-2 border-dashed rounded-[2.5rem] p-4 flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group transition-all ${uploadError ? 'border-red-400' : 'border-slate-200'}`}>
+                    
+                    <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
+                      {/* Botão Fixo de Upload */}
+                      <div onClick={() => fileInputRef.current.click()} className="h-24 w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
+                        <Plus size={24} className="text-indigo-500 mb-1" />
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Upload</span>
+                      </div>
+
+                      {/* Lista de Imagens com Controles (Hover) */}
                       {(() => {
                         const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
-                        if (mArr.length === 0) return <div className="text-center group-hover:scale-110 transition-transform"><Plus size={32} className="text-indigo-500 mx-auto mb-2" /><p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Upload</p></div>;
-                        
-                        return (
-                          <div className="flex gap-3 overflow-x-auto w-full snap-x pb-2 scrollbar-hide">
-                            {mArr.map((m, i) => (
-                              <img key={i} src={m.url} className="h-24 w-24 object-cover rounded-xl shrink-0 snap-center shadow-sm border border-slate-200" />
-                            ))}
+                        return mArr.map((m, i) => (
+                          <div key={i} className="h-24 w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 shadow-sm group/item">
+                            <img src={m.url} className="w-full h-full object-cover" />
+                            
+                            {/* Overlay de Ações (Aparece no Hover) */}
+                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-sm">
+                              <button type="button" onClick={(e) => { e.stopPropagation(); removeMedia(i); }} className="bg-rose-500 text-white p-1.5 rounded-lg hover:bg-rose-600 transition-colors shadow-sm"><Trash2 size={12} /></button>
+                              
+                              <div className="flex gap-2">
+                                {i > 0 && <button type="button" onClick={(e) => { e.stopPropagation(); moveMedia(i, -1); }} className="bg-white/20 text-white p-1 rounded hover:bg-white/40"><ChevronLeft size={14} /></button>}
+                                {i < mArr.length - 1 && <button type="button" onClick={(e) => { e.stopPropagation(); moveMedia(i, 1); }} className="bg-white/20 text-white p-1 rounded hover:bg-white/40"><ChevronRight size={14} /></button>}
+                              </div>
+                            </div>
+                            
+                            {/* Emblema de Numeração */}
+                            <span className="absolute top-1.5 left-1.5 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md">{i + 1}</span>
                           </div>
-                        );
+                        ));
                       })()}
                     </div>
-                    {uploadError && <p className="text-red-500 text-[10px] font-bold mt-3">{uploadError}</p>}
+                    {uploadError && <p className="text-red-500 text-[10px] font-bold mt-2">{uploadError}</p>}
                   </div>
                 </div>
                 <div className="space-y-8">
