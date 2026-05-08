@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'; // ADICIONADO FIREBASE STORAGE
 import { 
   CheckCircle2, XCircle, Clock, Send, Instagram, Facebook, Linkedin, 
   Plus, Trash2, Smartphone, Eye, Copy, Image as ImageIcon, Film, 
@@ -21,6 +22,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app); // INICIALIZAÇÃO DO STORAGE
 
 const INITIAL_CLIENTS = [
   { id: 'geral', name: 'Visão Geral (Agência)', handle: 'aokimidias', color: 'from-indigo-600 to-purple-700' },
@@ -52,11 +54,7 @@ const MediaCarousel = ({ media, isPreview = false }) => {
 
   return (
     <div className="relative w-full h-full group/carousel overflow-hidden bg-white rounded-inherit">
-      {/* Trilha de Imagens Deslizante */}
-      <div 
-        className="flex w-full h-full transition-transform duration-300 ease-out"
-        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-      >
+      <div className="flex w-full h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
         {mediaArr.map((m, i) => (
           <div key={i} className="w-full h-full shrink-0 flex items-center justify-center relative bg-white">
             {m.type === 'video' ? (
@@ -70,28 +68,15 @@ const MediaCarousel = ({ media, isPreview = false }) => {
         ))}
       </div>
 
-      {/* Controles do Carrossel */}
       {mediaArr.length > 1 && (
         <>
-          {/* Seta Esquerda */}
-          <button 
-            type="button" 
-            onClick={prev} 
-            className={`absolute left-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}
-          >
+          <button type="button" onClick={prev} className={`absolute left-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}>
             <ChevronLeft size={isPreview ? 20 : 14} />
           </button>
-          
-          {/* Seta Direita */}
-          <button 
-            type="button" 
-            onClick={next} 
-            className={`absolute right-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}
-          >
+          <button type="button" onClick={next} className={`absolute right-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}>
             <ChevronRight size={isPreview ? 20 : 14} />
           </button>
           
-          {/* Bolinhas no celular, Contagem no feed */}
           {isPreview ? (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-black/30 backdrop-blur-md rounded-full">
               {mediaArr.map((_, i) => (
@@ -112,6 +97,7 @@ const MediaCarousel = ({ media, isPreview = false }) => {
 export default function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false); // Estado de envio pro Firebase Storage
   const [posts, setPosts] = useState([]);
   const [activeClientId, setActiveClientId] = useState(INITIAL_CLIENTS[0].id);
   const [activeTab, setActiveTab] = useState('todos');
@@ -119,9 +105,10 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [uploadError, setUploadError] = useState('');
-  const [copiedType, setCopiedType] = useState(null);
   const [isClientView, setIsClientView] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const [draggedMediaIdx, setDraggedMediaIdx] = useState(null); // DRAG & DROP DA MÍDIA
 
   const [formState, setFormState] = useState({
     content: '', platforms: [], hashtags: '', postType: 'estatico',
@@ -141,9 +128,7 @@ export default function App() {
 
   useEffect(() => {
     if (currentClient) {
-      document.title = isClientView 
-        ? `Aprovação: ${currentClient.name} | Aoki` 
-        : `${currentClient.name} | SocialFlow Aoki`;
+      document.title = isClientView ? `Aprovação: ${currentClient.name} | Aoki` : `${currentClient.name} | SocialFlow Aoki`;
     }
   }, [currentClient, isClientView]);
 
@@ -187,19 +172,14 @@ export default function App() {
     const files = Array.from(e.target.files);
     setUploadError('');
     if (files.length === 0) return;
-    if (files.some(f => f.size > 5000000)) {
-      setUploadError('Ficheiros demasiado grandes (Máx 5MB).');
-      return;
-    }
-    const readMedia = (file) => new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve({
-        type: file.type.startsWith('video') ? 'video' : 'image',
-        url: reader.result
-      });
-      reader.readAsDataURL(file);
-    });
-    const newMedia = await Promise.all(files.map(readMedia));
+    
+    // Leitura super rápida apenas para Preview (URL local). O Upload acontece no submit!
+    const newMedia = files.map(file => ({
+      type: file.type.startsWith('video') ? 'video' : 'image',
+      url: URL.createObjectURL(file), // Preview instantâneo
+      file: file // Guardamos o arquivo real para enviar pro Google Storage depois
+    }));
+
     setFormState(prev => ({
       ...prev,
       media: prev.postType === 'carrossel' 
@@ -211,19 +191,50 @@ export default function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formState.content.trim() || formState.platforms.length === 0) return;
+    setIsUploading(true); // Bloqueia o botão e avisa o utilizador
+
     try {
+      let finalMediaData = null;
+
+      // 1. FAZ UPLOAD DOS ARQUIVOS PRO FIREBASE STORAGE PRIMEIRO
+      if (formState.media) {
+        const mediaArray = Array.isArray(formState.media) ? formState.media : [formState.media];
+        const processedMedia = [];
+
+        for (const m of mediaArray) {
+          if (m.file) { 
+            // É um arquivo novo! Envia pro Firebase Storage
+            const fileRef = ref(storage, `agencias/aoki/posts/${Date.now()}_${m.file.name}`);
+            await uploadBytes(fileRef, m.file);
+            const downloadUrl = await getDownloadURL(fileRef);
+            processedMedia.push({ type: m.type, url: downloadUrl });
+          } else {
+            // Já era um link antigo do banco (edição), mantém.
+            processedMedia.push(m);
+          }
+        }
+        finalMediaData = formState.postType === 'carrossel' ? processedMedia : processedMedia[0];
+      }
+
+      // 2. SALVA O POST NO BANCO DE DADOS
       const id = editingId || Date.now().toString();
       await setDoc(doc(db, 'agencias', 'aoki', 'posts', id), {
         ...formState,
+        media: finalMediaData, // Salva só a URL segura agora
         clientId: activeClientId === 'geral' ? 'c1' : activeClientId,
         status: editingId ? (posts.find(p => p.id === editingId)?.status || 'pendente') : 'pendente',
         date: editingId ? posts.find(p => p.id === editingId).date : new Date().toISOString(),
         feedback: ''
       }, { merge: true });
+
       setIsModalOpen(false);
       setEditingId(null);
+      setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' });
     } catch (err) {
-      setUploadError("Erro ao guardar.");
+      console.error(err);
+      setUploadError("Erro ao enviar arquivos para a nuvem. Tente novamente.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -235,20 +246,8 @@ export default function App() {
     });
   };
 
-  const moveMedia = (index, direction) => {
-    setFormState(prev => {
-      if (!Array.isArray(prev.media)) return prev;
-      const newMedia = [...prev.media];
-      if (index + direction < 0 || index + direction >= newMedia.length) return prev;
-      const temp = newMedia[index];
-      newMedia[index] = newMedia[index + direction];
-      newMedia[index + direction] = temp;
-      return { ...prev, media: newMedia };
-    });
-  };
-
   const deletePost = async (id) => {
-    if (confirm("Apagar rascunho?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id));
+    if (confirm("Apagar rascunho permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id));
   };
 
   const copyClientLink = () => {
@@ -260,7 +259,7 @@ export default function App() {
     textArea.select();
     document.execCommand('copy');
     document.body.removeChild(textArea);
-    alert("Link copiado!");
+    alert("Link do cliente copiado!");
   };
 
   const getDaysInMonth = (date) => {
@@ -271,15 +270,12 @@ export default function App() {
     return { firstDay, days };
   };
 
-  const changeMonth = (offset) => {
-    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1);
-    setCurrentMonth(newDate);
-  };
-
-  if (isLoading) return <div className="h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse text-xl">Sincronizando Aoki Flow...</div>;
+  if (isLoading) return <div className="h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse text-xl"><Loader2 className="animate-spin mr-3" /> Sincronizando Flow...</div>;
 
   return (
     <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden">
+      
+      {/* --- SIDEBAR --- */}
       <aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-8 max-h-[45vh] md:max-h-none md:h-full overflow-y-auto overflow-x-hidden z-20 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">  
         <div className="flex items-center gap-3">
           <div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div>
@@ -314,6 +310,7 @@ export default function App() {
         )}
       </aside>
 
+      {/* --- CONTEÚDO PRINCIPAL --- */}
       <main className="flex-1 h-full overflow-y-auto overflow-x-hidden p-5 md:p-10 min-w-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -325,6 +322,7 @@ export default function App() {
           </div>
         </header>
 
+        {/* VIEW: FEED DE POSTS */}
         {mainView === 'feed' && (
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start content-start">
@@ -345,12 +343,11 @@ export default function App() {
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{post.postType}</span>
-                        <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
+                        <div className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</div>
                       </div>
                     </div>
 
                     <div className="flex gap-6 items-start">
-                      {/* MINIATURA DO FEED USANDO O NOVO CARROSSEL INSTA-STYLE */}
                       <div className="w-28 aspect-[4/5] shrink-0 rounded-2xl overflow-hidden border border-slate-100 relative shadow-inner">
                         <MediaCarousel media={post.media} isPreview={false} />
                       </div>
@@ -403,7 +400,6 @@ export default function App() {
                        </div>
                        <div className="p-4">
                          
-                         {/* CARROSSEL DO CELULAR COM O COMPONENTE NOVO */}
                          <div className="relative group mb-4 rounded-2xl overflow-hidden shadow-sm border border-slate-100 bg-white aspect-[4/5]">
                             <MediaCarousel media={previewPost.media} isPreview={true} />
                          </div>
@@ -421,24 +417,14 @@ export default function App() {
           </div>
         )}
 
-        {/* --- VIEW: CALENDÁRIO --- */}
+        {/* VIEW: CALENDÁRIO COM DRAG & DROP */}
         {mainView === 'calendario' && (
           <div className="bg-white rounded-[3rem] border border-slate-200 overflow-hidden shadow-sm">
             <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
                <div className="flex items-center gap-6">
-                  <button onClick={() => changeMonth(-1)} className="p-3 hover:bg-slate-50 rounded-full transition-all text-slate-400"><ChevronLeft /></button>
-                  <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">
-                    {currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}
-                  </h3>
-                  <button onClick={() => changeMonth(1)} className="p-3 hover:bg-slate-50 rounded-full transition-all text-slate-400"><ChevronRight /></button>
-               </div>
-               <div className="flex gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm text-xs font-bold text-slate-600">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Aprovados
-                  </div>
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm text-xs font-bold text-slate-600">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span> Pendentes
-                  </div>
+                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronLeft /></button>
+                  <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">{currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}</h3>
+                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronRight /></button>
                </div>
             </div>
 
@@ -460,22 +446,33 @@ export default function App() {
                   const dayPosts = filteredPosts.filter(p => p.scheduleDate === dateStr);
                   
                   cells.push(
-                    <div key={d} className="border-r border-b border-slate-100 p-3 flex flex-col gap-1.5 hover:bg-slate-50 transition-colors group">
+                    <div 
+                      key={d} 
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const postId = e.dataTransfer.getData('postId');
+                        if (postId) setDoc(doc(db, 'agencias', 'aoki', 'posts', postId), { scheduleDate: dateStr }, { merge: true });
+                      }}
+                      className="border-r border-b border-slate-100 p-3 flex flex-col gap-1.5 hover:bg-slate-50 transition-colors group"
+                    >
                       <span className="text-xs font-black text-slate-300 group-hover:text-indigo-600">{d}</span>
                       <div className="flex-1 overflow-y-auto space-y-1.5 scrollbar-hide">
                         {dayPosts.map(p => (
                           <div 
                             key={p.id}
+                            draggable
+                            onDragStart={(e) => e.dataTransfer.setData('postId', p.id)}
                             onClick={() => { setPreviewPost(p); setPreviewPlatform(p.platforms[0]); setMainView('feed'); }}
-                            className={`p-1.5 rounded-lg border flex flex-col gap-1 cursor-pointer transition-all hover:scale-[1.02] shadow-sm ${
+                            className={`p-1.5 rounded-lg border flex flex-col gap-1 cursor-grab active:cursor-grabbing transition-all hover:scale-[1.02] shadow-sm ${
                               p.status === 'aprovado' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-amber-50/50 border-amber-100'
                             }`}
                           >
-                             <div className="flex justify-between items-center">
+                             <div className="flex justify-between items-center pointer-events-none">
                                 <span className="text-[8px] font-black text-slate-500">{p.scheduleTime}</span>
                                 {p.media && <div className="w-4 h-4 rounded-sm overflow-hidden bg-slate-200"><img src={Array.isArray(p.media) ? p.media[0].url : p.media.url} className="w-full h-full object-cover" /></div>}
                              </div>
-                             <p className="text-[8px] font-medium text-slate-700 line-clamp-2 leading-tight">{p.content}</p>
+                             <p className="text-[8px] font-medium text-slate-700 line-clamp-2 leading-tight pointer-events-none">{p.content}</p>
                           </div>
                         ))}
                       </div>
@@ -489,7 +486,7 @@ export default function App() {
         )}
       </main>
 
-      {/* Modal Novo/Editar */}
+      {/* --- MODAL DE NOVO/EDITAR (COM DRAG & DROP) --- */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
@@ -497,6 +494,7 @@ export default function App() {
               <h2 className="text-2xl font-black text-slate-900">{editingId ? 'Editar Post' : 'Novo Conteúdo'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:rotate-90 transition-all"><XCircle size={24} /></button>
             </div>
+            
             <form onSubmit={handleSubmit} className="p-8 space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-8">
@@ -516,33 +514,53 @@ export default function App() {
                       ))}
                     </div>
                   </div>
+                  
+                  {/* UPLOAD COM DRAG & DROP DE IMAGENS */}
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Mídia</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Mídia (Upload p/ Nuvem)</label>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
+                    
                     <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
                       <div onClick={() => fileInputRef.current.click()} className="h-24 w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
                         <Plus size={24} className="text-indigo-500 mb-1" />
                         <span className="text-[9px] font-black text-slate-500 uppercase">Upload</span>
                       </div>
+                      
                       {(() => {
                         const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
                         return mArr.map((m, i) => (
-                          <div key={i} className="h-24 w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 group/item">
-                            <img src={m.url} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 backdrop-blur-sm">
-                              <button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-1.5 rounded-lg"><Trash2 size={12} /></button>
-                              <div className="flex gap-2">
-                                {i > 0 && <button type="button" onClick={() => moveMedia(i, -1)} className="bg-white/20 text-white p-1 rounded"><ChevronLeft size={14} /></button>}
-                                {i < mArr.length - 1 && <button type="button" onClick={() => moveMedia(i, 1)} className="bg-white/20 text-white p-1 rounded"><ChevronRight size={14} /></button>}
-                              </div>
+                          <div 
+                            key={i} 
+                            draggable
+                            onDragStart={() => setDraggedMediaIdx(i)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              if (draggedMediaIdx === null || draggedMediaIdx === i) return;
+                              setFormState(prev => {
+                                const newMedia = [...prev.media];
+                                const temp = newMedia[draggedMediaIdx];
+                                newMedia.splice(draggedMediaIdx, 1);
+                                newMedia.splice(i, 0, temp);
+                                return { ...prev, media: newMedia };
+                              });
+                              setDraggedMediaIdx(null);
+                            }}
+                            className="h-24 w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 group/item cursor-grab active:cursor-grabbing"
+                          >
+                            <img src={m.url} className="w-full h-full object-cover pointer-events-none" />
+                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm">
+                              <button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-2 rounded-xl hover:scale-110 transition-transform"><Trash2 size={16} /></button>
                             </div>
-                            <span className="absolute top-1 left-1 bg-slate-900/60 text-white text-[8px] font-black px-1 py-0.5 rounded-md">{i + 1}</span>
+                            <span className="absolute top-1 left-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md pointer-events-none">{i + 1}</span>
                           </div>
                         ));
                       })()}
                     </div>
+                    {uploadError && <p className="text-red-500 text-[10px] font-bold mt-2">{uploadError}</p>}
                   </div>
                 </div>
+
                 <div className="space-y-8">
                   <div className="bg-indigo-50/50 p-6 rounded-[2.5rem] border border-indigo-100">
                     <label className="block text-[10px] font-black text-indigo-400 uppercase mb-4 tracking-widest">Agendamento</label>
@@ -561,9 +579,12 @@ export default function App() {
                   </div>
                 </div>
               </div>
+
               <div className="flex gap-4 pt-6 border-t border-slate-50">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600 transition-colors">Sair</button>
-                <button type="submit" disabled={formState.platforms.length === 0} className={`flex-[2] py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${formState.platforms.length === 0 ? 'bg-slate-100 text-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>Enviar</button>
+                <button type="submit" disabled={formState.platforms.length === 0 || isUploading} className={`flex-[2] flex items-center justify-center gap-2 py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${formState.platforms.length === 0 ? 'bg-slate-100 text-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                  {isUploading ? <><Loader2 size={16} className="animate-spin" /> A guardar mídia...</> : (editingId ? 'Atualizar Post' : 'Lançar Post')}
+                </button>
               </div>
             </form>
           </div>
