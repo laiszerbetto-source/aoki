@@ -190,10 +190,9 @@ export default function App() {
   if (isLoading) return <div className="h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse text-xl">Sincronizando Aoki Flow...</div>;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row font-sans text-slate-900 antialiased">
+    <div className="flex flex-col md:flex-row h-screen w-full bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-full md:w-72 bg-white border-r border-slate-200 p-6 flex flex-col gap-8 h-screen sticky top-0 overflow-y-auto z-20 shadow-sm">
-        <div className="flex items-center gap-3">
+<aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-8 max-h-[45vh] md:max-h-none md:h-full overflow-y-auto z-20 shadow-sm shrink-0">        <div className="flex items-center gap-3">
           <div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100">
             <Send size={24} />
           </div>
@@ -259,7 +258,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+     <main className="flex-1 p-5 md:p-10 overflow-y-auto">
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
