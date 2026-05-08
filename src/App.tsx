@@ -190,9 +190,10 @@ export default function App() {
   if (isLoading) return <div className="h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse text-xl">Sincronizando Aoki Flow...</div>;
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-screen bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden">
+   <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden">
       {/* Sidebar */}
-<aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-8 max-h-[45vh] md:max-h-none md:h-full overflow-y-auto overflow-x-hidden z-20 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">     <div className="flex items-center gap-3">
+<aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-8 max-h-[45vh] md:max-h-none md:h-full overflow-y-auto overflow-x-hidden z-20 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">  
+  <div className="flex items-center gap-3">
           <div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100">
             <Send size={24} />
           </div>
