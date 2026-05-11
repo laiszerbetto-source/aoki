@@ -183,7 +183,13 @@ export default function App() {
       <aside className="w-full md:w-72 bg-white border-r border-slate-200 p-6 flex flex-col gap-8 h-full shrink-0">  
         <div className="flex items-center gap-3"><div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div><span className="font-black text-2xl tracking-tighter">SocialFlow</span></div>
         <div className="space-y-6">
-          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 text-center"><p className="text-[10px] font-black text-slate-400 uppercase mb-1">Marca Aoki</p><h3 className="text-lg font-black text-slate-800">{currentClient?.name}</h3></div>
+          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Marca Aoki</p>
+            {/* O SELECT VOLTOU! */}
+            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
+              {INITIAL_CLIENTS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
           <nav className="space-y-1">
              <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><LayoutGrid size={18} /> Feed</button>
              <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><Calendar size={18} /> Calendário</button>
