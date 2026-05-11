@@ -284,13 +284,13 @@ export default function App() {
         {mainView === 'feed' && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 w-full items-start content-start pb-24">
             {filteredPosts.length === 0 ? (
-              <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-10 md:p-20 text-center flex flex-col items-center md:col-span-2 xl:col-span-3 text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
+              <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] md:rounded-[3rem] p-10 md:p-20 text-center flex flex-col items-center md:col-span-2 xl:col-span-3 text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
             ) : (
               filteredPosts.map(post => (
-                <div key={post.id} className="bg-white rounded-[3rem] border border-slate-200 shadow-sm transition-all hover:shadow-2xl overflow-hidden flex flex-col group h-[620px]">
+                <div key={post.id} className="bg-white rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-sm transition-all hover:shadow-xl overflow-hidden flex flex-col group h-full min-h-[480px]">
                   
-                  {/* IMAGEM E STATUS (ESTRUTURA CAMADAS) */}
-                  <div className="h-[280px] w-full bg-slate-50 relative border-b border-slate-50 shrink-0">
+                  {/* IMAGEM E STATUS */}
+                  <div className="aspect-square md:aspect-[4/3] w-full bg-slate-50 relative border-b border-slate-50 shrink-0">
                     <MediaCarousel media={post.media} isPreview={false} />
                     <div className="absolute top-4 left-4 flex gap-2">
                       {post.platforms.map(plt => (
@@ -303,9 +303,9 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* CONTEÚDO (ESTRUTURA CAMADAS) */}
-                  <div className="p-6 md:p-7 flex-1 flex flex-col min-h-0 overflow-hidden">
-                    <div className="flex justify-between items-center mb-4 shrink-0">
+                  {/* CONTEÚDO COM ALTURA ADAPTÁVEL */}
+                  <div className="p-5 md:p-7 flex-1 flex flex-col">
+                    <div className="flex justify-between items-center mb-4 shrink-0 gap-2 flex-wrap">
                       <div className="flex items-center gap-2 text-indigo-600/50 bg-indigo-50/50 w-fit px-3 py-1.5 rounded-full border border-indigo-100/50">
                         <Calendar size={14} />
                         <span className="text-[9px] md:text-[10px] font-black uppercase tracking-tight">
@@ -331,37 +331,37 @@ export default function App() {
                       )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto mb-4 scrollbar-hide">
+                    <div className="mb-4">
                       {activeClientId === 'geral' && <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">{INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}</p>}
-                      <p className="text-slate-700 text-sm font-medium leading-relaxed italic">"{post.content}"</p>
+                      <p className="text-slate-700 text-sm font-medium leading-relaxed italic break-words">"{post.content}"</p>
                     </div>
                     
                     {post.hashtags && (
-                      <p className="text-indigo-500 text-[10px] md:text-[11px] font-black mb-4 truncate shrink-0">
+                      <p className="text-indigo-500 text-[10px] md:text-[11px] font-black mb-4 break-words">
                         {post.hashtags}
                       </p>
                     )}
 
-                    {/* BASE E BOTÕES (ESTRUTURA CAMADAS) */}
-                    <div className="pt-5 border-t border-slate-50 flex items-center justify-between shrink-0">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <button onClick={() => setZoomedPost(post)} className="p-2 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors flex-shrink-0" title="Ampliar"><Maximize2 size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                        <button onClick={() => setFeedbackPost(post)} className="p-2 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-50 border border-transparent transition-all flex-shrink-0 relative" title="Chat">
+                    {/* BASE RESPONSIVA (SEM ESPREMIMENTO) */}
+                    <div className="mt-auto pt-5 border-t border-slate-50 flex flex-wrap items-center justify-between gap-y-4 shrink-0">
+                      <div className="flex items-center gap-1 w-full md:w-auto justify-center md:justify-start">
+                        <button onClick={() => setZoomedPost(post)} className="p-2.5 md:p-2 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors flex-shrink-0" title="Ampliar"><Maximize2 size={16} className="md:w-[18px] md:h-[18px]" /></button>
+                        <button onClick={() => setFeedbackPost(post)} className="p-2.5 md:p-2 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-50 border border-transparent transition-all flex-shrink-0 relative" title="Chat">
                           <MessageSquare size={16} className="md:w-[18px] md:h-[18px]" />
                           {post.feedbacks?.length > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white animate-pulse"></span>}
                         </button>
                         
                         {!isClientView && (
                           <>
-                            <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors flex-shrink-0" title="Editar"><Edit3 size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                            <button onClick={() => deletePost(post.id)} className="p-2 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 hover:bg-rose-50 transition-colors flex-shrink-0" title="Excluir"><Trash2 size={16} className="md:w-[18px] md:h-[18px]" /></button>
+                            <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2.5 md:p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors flex-shrink-0" title="Editar"><Edit3 size={16} className="md:w-[18px] md:h-[18px]" /></button>
+                            <button onClick={() => deletePost(post.id)} className="p-2.5 md:p-2 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 hover:bg-rose-50 transition-colors flex-shrink-0" title="Excluir"><Trash2 size={16} className="md:w-[18px] md:h-[18px]" /></button>
                           </>
                         )}
                       </div>
                       
-                      <div className="flex gap-1 md:gap-1.5 shrink-0">
-                        {post.status !== 'rejeitado' && <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="bg-slate-50 text-rose-500 px-3 md:px-4 py-2 rounded-[1.2rem] text-[9px] md:text-[10px] font-black border border-rose-100 truncate hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>}
-                        {post.status !== 'aprovado' && <button onClick={() => changePostStatus(post.id, 'aprovado')} className="bg-emerald-500 text-white px-3 md:px-4 py-2 rounded-[1.2rem] text-[9px] md:text-[10px] font-black shadow-lg truncate hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>}
+                      <div className="flex gap-2 w-full md:w-auto justify-stretch">
+                        {post.status !== 'rejeitado' && <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="flex-1 md:flex-none bg-slate-50 text-rose-500 px-3 md:px-4 py-3 md:py-2 rounded-xl md:rounded-[1.2rem] text-[10px] md:text-[10px] font-black border border-rose-100 truncate hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>}
+                        {post.status !== 'aprovado' && <button onClick={() => changePostStatus(post.id, 'aprovado')} className="flex-1 md:flex-none bg-emerald-500 text-white px-3 md:px-4 py-3 md:py-2 rounded-xl md:rounded-[1.2rem] text-[10px] md:text-[10px] font-black shadow-lg truncate hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>}
                       </div>
                     </div>
                   </div>
@@ -373,8 +373,8 @@ export default function App() {
 
         {/* VIEW: CALENDÁRIO COM DRAG AND DROP */}
         {mainView === 'calendario' && (
-          <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden pb-24 md:pb-0 mb-24">
-            <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="bg-white rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden pb-24 md:pb-0 mb-24">
+            <div className="p-5 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
                <div className="flex items-center gap-4 md:gap-6">
                   <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-2 md:p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronLeft /></button>
                   <h3 className="text-lg md:text-xl font-black text-slate-800 uppercase tracking-tighter">{currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}</h3>
@@ -388,7 +388,7 @@ export default function App() {
               ))}
             </div>
 
-            <div className="grid grid-cols-7 auto-rows-[120px] md:auto-rows-[160px]">
+            <div className="grid grid-cols-7 auto-rows-[100px] md:auto-rows-[160px]">
               {(() => {
                 const { firstDay, days } = getDaysInMonth(currentMonth);
                 const cells = [];
@@ -454,33 +454,33 @@ export default function App() {
 
       {/* MODAL DE ZOOM */}
       {zoomedPost && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-8" onClick={() => setZoomedPost(null)}>
-          <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setZoomedPost(null)} className="absolute top-4 right-4 md:top-6 md:right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><XCircle size={24} /></button>
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-0 md:p-8" onClick={() => setZoomedPost(null)}>
+          <div className="bg-white w-full h-full md:h-auto md:max-w-5xl md:rounded-[3rem] shadow-2xl flex flex-col md:flex-row overflow-hidden md:max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setZoomedPost(null)} className="absolute top-4 right-4 md:top-6 md:right-6 z-50 p-2 bg-white md:bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors shadow-sm md:shadow-none"><XCircle size={24} /></button>
             
-            <div className="w-full md:w-1/2 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 md:p-8 flex items-center justify-center min-h-[250px] md:min-h-[300px]">
+            <div className="w-full md:w-1/2 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 md:p-8 flex items-center justify-center min-h-[35vh] md:min-h-[300px]">
                <div className="w-full max-w-sm aspect-[4/5] rounded-2xl overflow-hidden shadow-lg bg-white">
                   <MediaCarousel media={zoomedPost.media} isPreview={true} />
                </div>
             </div>
             
-            <div className="w-full md:w-1/2 p-6 md:p-12 overflow-y-auto flex flex-col">
+            <div className="w-full md:w-1/2 p-6 md:p-12 overflow-y-auto flex flex-col h-[65vh] md:h-auto">
                <div className="flex gap-2 mb-4 md:mb-6">
                   <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{zoomedPost.postType}</span>
                   <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : zoomedPost.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span>
                </div>
                
                <h3 className="text-lg md:text-xl font-black text-slate-900 mb-2">Detalhes da Postagem</h3>
-               <p className="text-xs md:text-sm font-bold text-indigo-600 flex items-center gap-2 mb-6 md:mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={14} className="md:w-4 md:h-4" /> {zoomedPost.scheduleDate ? `${zoomedPost.scheduleDate.split('-').reverse().join('/')} às ${zoomedPost.scheduleTime}` : 'Imediato'}</p>
+               <p className="text-xs md:text-sm font-bold text-indigo-600 flex items-center gap-2 mb-4 md:mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={14} className="md:w-4 md:h-4" /> {zoomedPost.scheduleDate ? `${zoomedPost.scheduleDate.split('-').reverse().join('/')} às ${zoomedPost.scheduleTime}` : 'Imediato'}</p>
                
-               <div className="bg-slate-50 p-5 md:p-6 rounded-3xl border border-slate-100 mb-6">
+               <div className="bg-slate-50 p-5 md:p-6 rounded-3xl border border-slate-100 mb-4 md:mb-6">
                   <p className="text-sm text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">{zoomedPost.content}</p>
                </div>
-               <p className="text-sm font-black text-indigo-600 mb-8">{zoomedPost.hashtags}</p>
+               <p className="text-sm font-black text-indigo-600 mb-6 md:mb-8 break-words">{zoomedPost.hashtags}</p>
                
                <div className="mt-auto pt-4 md:pt-6 border-t border-slate-100 flex gap-2">
-                  {zoomedPost.status !== 'rejeitado' && <button onClick={() => changePostStatus(zoomedPost.id, 'rejeitado')} className="flex-1 bg-rose-50 text-rose-600 py-3 rounded-2xl font-black text-[10px] md:text-xs hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>}
-                  {zoomedPost.status !== 'aprovado' && <button onClick={() => changePostStatus(zoomedPost.id, 'aprovado')} className="flex-1 bg-emerald-500 text-white py-3 rounded-2xl font-black text-[10px] md:text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar Post</button>}
+                  {zoomedPost.status !== 'rejeitado' && <button onClick={() => changePostStatus(zoomedPost.id, 'rejeitado')} className="flex-1 bg-rose-50 text-rose-600 py-4 md:py-3 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>}
+                  {zoomedPost.status !== 'aprovado' && <button onClick={() => changePostStatus(zoomedPost.id, 'aprovado')} className="flex-1 bg-emerald-500 text-white py-4 md:py-3 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar Post</button>}
                </div>
             </div>
           </div>
@@ -489,95 +489,97 @@ export default function App() {
 
       {/* MODAL DE NOVO/EDITAR POST COM UPLOAD */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-[2.5rem] md:rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 md:p-8 border-b border-slate-50 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-xl z-10">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
+          <div className="bg-white w-full h-[90vh] md:h-auto md:max-w-2xl rounded-t-[2.5rem] md:rounded-[3.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 flex flex-col">
+            <div className="p-6 md:p-8 border-b border-slate-50 flex justify-between items-center bg-white/90 backdrop-blur-xl shrink-0">
               <h2 className="text-xl md:text-2xl font-black text-slate-900">{editingId ? 'Editar Post' : 'Novo Conteúdo'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="p-2 md:p-3 bg-slate-100 rounded-2xl text-slate-400 hover:rotate-90 transition-all"><XCircle size={20} className="md:w-6 md:h-6" /></button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8 md:space-y-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
-                <div className="space-y-6 md:space-y-8">
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Destino</label>
-                    <div className="flex gap-2">
-                      {['instagram', 'facebook', 'linkedin'].map(plt => (
-                        <button key={plt} type="button" onClick={() => setFormState(prev => ({ ...prev, platforms: prev.platforms.includes(plt) ? prev.platforms.filter(p => p !== plt) : [...prev.platforms, plt] }))} className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[9px] uppercase ${formState.platforms.includes(plt) ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md' : 'border-slate-100 text-slate-400'}`}>{plt}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Formato</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[ { id: 'estatico', icon: <Square size={16} />, label: 'Post' }, { id: 'carrossel', icon: <Layers size={16} />, label: 'Album' }, { id: 'reel', icon: <Film size={16} />, label: 'Vídeo' } ].map(type => (
-                        <button key={type.id} type="button" onClick={() => setFormState({...formState, postType: type.id})} className={`flex flex-col items-center gap-2 py-3 md:py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest flex items-center gap-2">Mídia (Arraste p/ Reordenar)</label>
-                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
-                    <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
-                      <div onClick={() => fileInputRef.current.click()} className="h-20 w-20 md:h-24 md:w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
-                        <Plus size={24} className="text-indigo-500 mb-1" />
-                        <span className="text-[9px] font-black text-slate-500 uppercase">Upload</span>
+            <div className="flex-1 overflow-y-auto">
+              <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8 md:space-y-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+                  <div className="space-y-6 md:space-y-8">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Destino</label>
+                      <div className="flex gap-2">
+                        {['instagram', 'facebook', 'linkedin'].map(plt => (
+                          <button key={plt} type="button" onClick={() => setFormState(prev => ({ ...prev, platforms: prev.platforms.includes(plt) ? prev.platforms.filter(p => p !== plt) : [...prev.platforms, plt] }))} className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[9px] uppercase ${formState.platforms.includes(plt) ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md' : 'border-slate-100 text-slate-400'}`}>{plt}</button>
+                        ))}
                       </div>
-                      {(() => {
-                        const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
-                        return mArr.map((m, i) => (
-                          <div 
-                            key={i} draggable onDragStart={() => setDraggedMediaIdx(i)} onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => { e.preventDefault(); if (draggedMediaIdx === null || draggedMediaIdx === i) return; setFormState(prev => { const newMedia = [...prev.media]; const temp = newMedia[draggedMediaIdx]; newMedia.splice(draggedMediaIdx, 1); newMedia.splice(i, 0, temp); return { ...prev, media: newMedia }; }); setDraggedMediaIdx(null); }}
-                            className="h-20 w-20 md:h-24 md:w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 group/item cursor-grab active:cursor-grabbing"
-                          >
-                            <img src={m.url} className="w-full h-full object-cover pointer-events-none" />
-                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm"><button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-2 rounded-xl hover:scale-110 transition-transform"><Trash2 size={14} className="md:w-4 md:h-4" /></button></div>
-                            <span className="absolute top-1 left-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md pointer-events-none">{i + 1}</span>
-                          </div>
-                        ));
-                      })()}
                     </div>
-                    {uploadError && <p className="text-red-500 text-[10px] font-bold mt-2">{uploadError}</p>}
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Formato</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[ { id: 'estatico', icon: <Square size={16} />, label: 'Post' }, { id: 'carrossel', icon: <Layers size={16} />, label: 'Album' }, { id: 'reel', icon: <Film size={16} />, label: 'Vídeo' } ].map(type => (
+                          <button key={type.id} type="button" onClick={() => setFormState({...formState, postType: type.id})} className={`flex flex-col items-center gap-2 py-3 md:py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest flex items-center gap-2">Mídia (Arraste p/ Reordenar)</label>
+                      <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
+                      <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
+                        <div onClick={() => fileInputRef.current.click()} className="h-20 w-20 md:h-24 md:w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
+                          <Plus size={24} className="text-indigo-500 mb-1" />
+                          <span className="text-[9px] font-black text-slate-500 uppercase">Upload</span>
+                        </div>
+                        {(() => {
+                          const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
+                          return mArr.map((m, i) => (
+                            <div 
+                              key={i} draggable onDragStart={() => setDraggedMediaIdx(i)} onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) => { e.preventDefault(); if (draggedMediaIdx === null || draggedMediaIdx === i) return; setFormState(prev => { const newMedia = [...prev.media]; const temp = newMedia[draggedMediaIdx]; newMedia.splice(draggedMediaIdx, 1); newMedia.splice(i, 0, temp); return { ...prev, media: newMedia }; }); setDraggedMediaIdx(null); }}
+                              className="h-20 w-20 md:h-24 md:w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 group/item cursor-grab active:cursor-grabbing"
+                            >
+                              <img src={m.url} className="w-full h-full object-cover pointer-events-none" />
+                              <div className="absolute inset-0 bg-slate-900/60 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm"><button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-2 rounded-xl hover:scale-110 transition-transform"><Trash2 size={14} className="md:w-4 md:h-4" /></button></div>
+                              <span className="absolute top-1 left-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md pointer-events-none">{i + 1}</span>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                      {uploadError && <p className="text-red-500 text-[10px] font-bold mt-2">{uploadError}</p>}
+                    </div>
+                  </div>
+
+                  <div className="space-y-6 md:space-y-8">
+                    <div className="bg-indigo-50/50 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-indigo-100">
+                      <label className="block text-[10px] font-black text-indigo-400 uppercase mb-3 md:mb-4 tracking-widest">Agendamento</label>
+                      <div className="space-y-3">
+                        <input type="date" required className="w-full p-3 md:p-4 bg-white border border-indigo-100 rounded-xl md:rounded-2xl text-xs font-black outline-none" value={formState.scheduleDate} onChange={(e) => setFormState({...formState, scheduleDate: e.target.value})} />
+                        <input type="time" required className="w-full p-3 md:p-4 bg-white border border-indigo-100 rounded-xl md:rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Legenda</label>
+                      <textarea required rows={4} className="w-full p-5 md:p-6 bg-slate-50 border border-slate-200 rounded-[1.5rem] md:rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Escreve aqui..."></textarea>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Hashtags</label>
+                      <input type="text" className="w-full p-4 md:p-5 bg-slate-50 border border-slate-200 rounded-[1rem] md:rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-6 md:space-y-8">
-                  <div className="bg-indigo-50/50 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-indigo-100">
-                    <label className="block text-[10px] font-black text-indigo-400 uppercase mb-3 md:mb-4 tracking-widest">Agendamento</label>
-                    <div className="space-y-3">
-                      <input type="date" required className="w-full p-3 md:p-4 bg-white border border-indigo-100 rounded-xl md:rounded-2xl text-xs font-black outline-none" value={formState.scheduleDate} onChange={(e) => setFormState({...formState, scheduleDate: e.target.value})} />
-                      <input type="time" required className="w-full p-3 md:p-4 bg-white border border-indigo-100 rounded-xl md:rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Legenda</label>
-                    <textarea required rows={4} className="w-full p-5 md:p-6 bg-slate-50 border border-slate-200 rounded-[1.5rem] md:rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Escreve aqui..."></textarea>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Hashtags</label>
-                    <input type="text" className="w-full p-4 md:p-5 bg-slate-50 border border-slate-200 rounded-[1rem] md:rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
-                  </div>
+                <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 border-t border-slate-50">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 md:py-5 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600 transition-colors">Cancelar</button>
+                  <button type="submit" disabled={formState.platforms.length === 0 || isUploading} className={`flex-[2] flex items-center justify-center gap-2 py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${formState.platforms.length === 0 ? 'bg-slate-100 text-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                    {isUploading ? <><Loader2 size={16} className="animate-spin" /> A guardar...</> : (editingId ? 'Atualizar Post' : 'Lançar Post')}
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 border-t border-slate-50">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 md:py-5 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600 transition-colors">Sair</button>
-                <button type="submit" disabled={formState.platforms.length === 0 || isUploading} className={`flex-[2] flex items-center justify-center gap-2 py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${formState.platforms.length === 0 ? 'bg-slate-100 text-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
-                  {isUploading ? <><Loader2 size={16} className="animate-spin" /> A guardar...</> : (editingId ? 'Atualizar Post' : 'Lançar Post')}
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* MODAL DE CHAT DE FEEDBACK */}
       {feedbackPost && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[500px] md:h-[600px] max-h-[90vh]">
-            <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-end md:items-center justify-center p-0 md:p-4">
+          <div className="bg-white w-full h-[85vh] md:h-[600px] md:max-w-md rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300">
+            <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <div>
                 <h2 className="text-base md:text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={18} className="text-indigo-500" /> Chat do Post</h2>
                 <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {feedbackPost.status}</p>
@@ -606,7 +608,7 @@ export default function App() {
               )}
             </div>
 
-            <form onSubmit={handleSendFeedback} className="p-3 md:p-4 border-t border-slate-100 bg-slate-50 flex gap-2">
+            <form onSubmit={handleSendFeedback} className="p-3 md:p-4 border-t border-slate-100 bg-slate-50 flex gap-2 shrink-0">
               <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Comentário..." className="flex-1 px-3 py-2 md:px-4 md:py-3 rounded-xl border border-slate-200 text-xs md:text-sm font-medium outline-none focus:border-indigo-500 transition-colors" />
               <button type="submit" disabled={!newFeedbackMessage.trim()} className="p-2 md:p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all flex-shrink-0"><SendHorizonal size={18} className="md:w-5 md:h-5" /></button>
             </form>
