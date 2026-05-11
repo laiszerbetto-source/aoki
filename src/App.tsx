@@ -112,17 +112,14 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('view') === 'client') setIsClientView(true);
+    signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
+    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (currentClient) document.title = isClientView ? `Aprovação: ${currentClient.name} | Aoki` : `${currentClient.name} | SocialFlow Aoki`;
   }, [currentClient, isClientView]);
-
-  useEffect(() => {
-    signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
-    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -236,37 +233,37 @@ export default function App() {
     {/* CONTAINER PRINCIPAL FIXO PARA DESKTOP */}
     <div className="fixed inset-0 flex bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden">
       
-      {/* SIDEBAR FIXA */}
-      <aside className="w-72 bg-white border-r border-slate-200 p-8 flex flex-col gap-8 h-full shrink-0 z-20 shadow-sm">  
+      {/* SIDEBAR FIXA E ACHATADA PARA CABER EM ECRÃS MENORES */}
+      <aside className="w-72 bg-white border-r border-slate-200 p-6 flex flex-col gap-5 h-full shrink-0 z-20 shadow-sm overflow-y-auto scrollbar-hide">  
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div>
-          <span className="font-black text-2xl tracking-tighter">SocialFlow</span>
+          <div className="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={20} /></div>
+          <span className="font-black text-xl tracking-tighter">SocialFlow</span>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Briefcase size={12} /> Marca Aoki</p>
-            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
+        <div className="space-y-5">
+          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><Briefcase size={12} /> Marca Aoki</p>
+            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-3 py-2.5 outline-none cursor-pointer" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
               {INITIAL_CLIENTS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <nav className="space-y-1">
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-4">Visualização</p>
-             <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><LayoutGrid size={18} /> Feed</button>
-             <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><Calendar size={18} /> Calendário</button>
+             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3">Visualização</p>
+             <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-md' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}><LayoutGrid size={18} /> Feed</button>
+             <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-md' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}><Calendar size={18} /> Calendário</button>
           </nav>
           <nav className="space-y-1">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-4">Status</p>
-            {[{ id: 'todos', label: 'Todos', icon: <Eye size={18} /> }, { id: 'pendente', label: 'Pendentes', icon: <Clock size={18} className="text-amber-500" /> }, { id: 'aprovado', label: 'Aprovados', icon: <CheckCircle2 size={18} className="text-emerald-500" /> }, { id: 'rejeitado', label: 'Rejeitados', icon: <XCircle size={18} className="text-rose-500" /> }].map(t => (
-              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all ${activeTab === t.id ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}>{t.icon} {t.label}</button>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3">Status</p>
+            {[{ id: 'todos', label: 'Todos', icon: <Eye size={16} /> }, { id: 'pendente', label: 'Pendentes', icon: <Clock size={16} className="text-amber-500" /> }, { id: 'aprovado', label: 'Aprovados', icon: <CheckCircle2 size={16} className="text-emerald-500" /> }, { id: 'rejeitado', label: 'Rejeitados', icon: <XCircle size={16} className="text-rose-500" /> }].map(t => (
+              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm transition-all ${activeTab === t.id ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}>{t.icon} {t.label}</button>
             ))}
           </nav>
         </div>
 
         {!isClientView && (
-          <div className="mt-auto space-y-3">
-             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all text-xs border border-slate-200"><FileDown size={16} /> Exportar PDF</button>
-             <button onClick={copyClientLink} className="w-full bg-slate-100 text-indigo-600 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-all text-xs border border-slate-200"><Share size={16} /> Link p/ Cliente</button>
+          <div className="mt-auto space-y-2 pt-4">
+             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all text-xs border border-slate-200 shadow-sm"><FileDown size={14} /> Exportar PDF</button>
+             <button onClick={copyClientLink} className="w-full bg-indigo-50 text-indigo-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-100 transition-all text-xs border border-indigo-100 shadow-sm"><Share size={14} /> Link p/ Cliente</button>
           </div>
         )}
       </aside>
