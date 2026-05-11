@@ -209,8 +209,10 @@ export default function App() {
         {mainView === 'feed' && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 w-full items-start">
             {filteredPosts.map(post => (
-              <div key={post.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl transition-all overflow-hidden flex flex-col group">
-                <div className="aspect-square w-full bg-slate-50 relative border-b border-slate-50">
+              <div key={post.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl transition-all overflow-hidden flex flex-col group h-[620px]">
+                
+                {/* 1. IMAGEM: METADE DO TAMANHO (OCUPA ~45% DO CARD) */}
+                <div className="h-[280px] w-full bg-slate-50 relative border-b border-slate-50 shrink-0">
                   <MediaCarousel media={post.media} />
                   <div className="absolute top-4 left-4 flex gap-2">
                     {post.platforms.map(plt => (
@@ -229,21 +231,37 @@ export default function App() {
                     }`}>{post.status}</span>
                   </div>
                 </div>
-                <div className="p-8 flex-1 flex flex-col">
-                  <div className="flex items-center gap-2 mb-4 text-indigo-600/50 bg-indigo-50/50 w-fit px-3 py-1.5 rounded-full border border-indigo-100/50">
+
+                {/* 2. MEIO: CONTEÚDO COM ALTURA CONTROLADA */}
+                <div className="p-7 flex-1 flex flex-col min-h-0 overflow-hidden">
+                  <div className="flex items-center gap-2 mb-4 text-indigo-600/50 bg-indigo-50/50 w-fit px-3 py-1.5 rounded-full border border-indigo-100/50 shrink-0">
                     <Calendar size={14} />
-                    <span className="text-[10px] font-black uppercase tracking-tight">{post.scheduleDate?.split('-').reverse().join('/')} às {post.scheduleTime}</span>
+                    <span className="text-[10px] font-black uppercase tracking-tight">
+                      {post.scheduleDate?.split('-').reverse().join('/')} às {post.scheduleTime}
+                    </span>
                   </div>
-                  <p className="text-slate-700 text-sm font-medium leading-relaxed mb-4 whitespace-pre-wrap flex-1 italic italic">"{post.content}"</p>
-                  {post.hashtags && <p className="text-indigo-500 text-[11px] font-black mb-6 truncate">{post.hashtags}</p>}
-                  <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
+
+                  {/* LEGENDA: SCROLL INTERNO SE FOR MUITO GRANDE */}
+                  <div className="flex-1 overflow-y-auto mb-4 scrollbar-hide">
+                    <p className="text-slate-700 text-sm font-medium leading-relaxed italic">
+                      "{post.content}"
+                    </p>
+                  </div>
+                  
+                  {post.hashtags && (
+                    <p className="text-indigo-500 text-[11px] font-black mb-4 truncate shrink-0">
+                      {post.hashtags}
+                    </p>
+                  )}
+
+                  {/* 3. BASE: TRAVADA SEMPRE NO MESMO LUGAR */}
+                  <div className="pt-5 border-t border-slate-50 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1">
                       <button onClick={() => setZoomedPost(post)} className="p-2 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors" title="Zoom"><Maximize2 size={18} /></button>
                       <button onClick={() => setFeedbackPost(post)} className="p-2 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-100 relative transition-colors" title="Chat">
                         <MessageSquare size={18} />
                         {post.feedbacks?.length > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white animate-pulse"></span>}
                       </button>
-                      {/* SÓ MOSTRA EDIÇÃO E LIXEIRA SE NÃO FOR CLIENTE */}
                       {!isClientView && (
                         <>
                           <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors" title="Editar"><Edit3 size={18} /></button>
@@ -251,9 +269,14 @@ export default function App() {
                         </>
                       )}
                     </div>
+
                     <div className="flex gap-2">
-                      {post.status !== 'aprovado' && <button onClick={() => changeStatus(post.id, 'aprovado')} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-[1.2rem] text-[10px] font-black shadow-lg transition-all uppercase tracking-widest">Aprovar</button>}
-                      {post.status === 'pendente' && <button onClick={() => changeStatus(post.id, 'rejeitado')} className="bg-slate-50 text-rose-500 px-5 py-2.5 rounded-[1.2rem] text-[10px] font-black border border-rose-100 hover:bg-rose-100 transition-all uppercase tracking-widest">Rejeitar</button>}
+                      {post.status !== 'aprovado' && (
+                        <button onClick={() => changeStatus(post.id, 'aprovado')} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-[1.2rem] text-[10px] font-black shadow-lg transition-all uppercase tracking-widest">Aprovar</button>
+                      )}
+                      {post.status === 'pendente' && (
+                        <button onClick={() => changeStatus(post.id, 'rejeitado')} className="bg-slate-50 text-rose-500 px-5 py-2.5 rounded-[1.2rem] text-[10px] font-black border border-rose-100 hover:bg-rose-100 transition-all uppercase tracking-widest">Rejeitar</button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -307,13 +330,14 @@ export default function App() {
             <button onClick={() => setZoomedPost(null)} className="absolute top-6 right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><XCircle size={24} /></button>
             <div className="w-full md:w-1/2 bg-slate-50 border-r border-slate-100 p-8 flex items-center justify-center min-h-[300px]"><div className="w-full max-w-sm aspect-[4/5] rounded-2xl overflow-hidden shadow-lg bg-white"><MediaCarousel media={zoomedPost.media} isPreview={true} /></div></div>
             <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto flex flex-col">
-               <div className="flex gap-2 mb-6"><span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{zoomedPost.postType}</span><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span></div>
+               <div className="flex gap-2 mb-6"><span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{zoomedPost.postType}</span><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : zoomedPost.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span></div>
                <h3 className="text-xl font-black text-slate-900 mb-2">Detalhes da Postagem</h3>
                <p className="text-sm font-bold text-indigo-600 flex items-center gap-2 mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={16} /> {zoomedPost.scheduleDate?.split('-').reverse().join('/')} às {zoomedPost.scheduleTime}</p>
                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-6 flex-1"><p className="text-sm text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">{zoomedPost.content}</p></div>
+               <p className="text-sm font-black text-indigo-600 mb-8">{zoomedPost.hashtags}</p>
                <div className="flex gap-2 mt-auto">
-                  <button onClick={() => { changeStatus(zoomedPost.id, 'aprovado'); setZoomedPost(null); }} className="flex-1 bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs shadow-lg uppercase">Aprovar Post</button>
-                  <button onClick={() => { changeStatus(zoomedPost.id, 'rejeitado'); setZoomedPost(null); }} className="flex-1 bg-rose-50 text-rose-600 py-4 rounded-2xl font-black text-xs hover:bg-rose-100 uppercase">Rejeitar</button>
+                  <button onClick={() => { changeStatus(zoomedPost.id, 'aprovado'); setZoomedPost(null); }} className="flex-1 bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs shadow-lg uppercase tracking-widest">Aprovar Post</button>
+                  <button onClick={() => { changeStatus(zoomedPost.id, 'rejeitado'); setZoomedPost(null); }} className="flex-1 bg-rose-50 text-rose-600 py-4 rounded-2xl font-black text-xs hover:bg-rose-100 uppercase tracking-widest">Rejeitar</button>
                </div>
             </div>
           </div>
@@ -334,7 +358,7 @@ export default function App() {
                   <div><label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Destino</label><div className="flex gap-2">{['instagram', 'facebook', 'linkedin'].map(plt => (<button key={plt} type="button" onClick={() => setFormState(p => ({ ...p, platforms: p.platforms.includes(plt) ? p.platforms.filter(x => x !== plt) : [...p.platforms, plt] }))} className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[9px] uppercase ${formState.platforms.includes(plt) ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md' : 'border-slate-100 text-slate-400'}`}>{plt}</button>))}</div></div>
                   <div><label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Formato</label><div className="grid grid-cols-3 gap-2">{[{id:'estatico',icon:<Square size={16}/>,label:'Post'},{id:'carrossel',icon:<Layers size={16}/>,label:'Álbum'},{id:'reel',icon:<Film size={16}/>,label:'Vídeo'}].map(type => (<button key={type.id} type="button" onClick={() => { setFormState({...formState, postType: type.id, media: type.id === 'carrossel' ? (Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : [])) : (Array.isArray(formState.media) ? formState.media[0] : formState.media)}); }} className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>))}</div></div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest text-[9px]">Mídia (5MB/10MB)</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Mídia (Máx 10MB)</label>
                     <input type="file" className="hidden" id="fileUp" onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
                     <label htmlFor="fileUp" className="h-24 w-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100"><Plus size={24} className="text-indigo-500 mb-1" /><span className="text-[9px] font-black text-slate-500 uppercase">Upload</span></label>
                     <div className="flex gap-2 mt-4 overflow-x-auto pb-2">{Array.isArray(formState.media) ? formState.media.map((m, i) => (<div key={i} className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={m.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: p.media.filter((_, idx) => idx !== i)}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>)) : formState.media && (<div className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={formState.media.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: null}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>)}</div>
@@ -343,7 +367,7 @@ export default function App() {
                 <div className="space-y-8">
                   <div className="bg-indigo-50/50 p-6 rounded-[2.5rem] border border-indigo-100"><label className="block text-[10px] font-black text-indigo-400 uppercase mb-4 tracking-widest">Agendamento</label><div className="space-y-3"><input type="date" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleDate} onChange={(e) => setFormState({...formState, scheduleDate: e.target.value})} /><input type="time" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} /></div></div>
                   <textarea required rows={5} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium outline-none resize-none" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Legenda do post..."></textarea>
-                  <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#hashtags" />
+                  <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
                 </div>
               </div>
               <div className="flex gap-4 pt-6 border-t border-slate-50">
@@ -375,7 +399,7 @@ export default function App() {
               })}
             </div>
             <form onSubmit={handleSendFeedback} className="p-4 border-t border-slate-100 bg-slate-50 flex gap-2">
-              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Escreva o seu comentário..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium outline-none focus:border-indigo-500 transition-colors" />
+              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Escreva o seu comentário..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium outline-none" />
               <button type="submit" disabled={!newFeedbackMessage.trim()} className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all"><SendHorizonal size={20} /></button>
             </form>
           </div>
