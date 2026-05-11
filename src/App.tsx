@@ -44,11 +44,12 @@ const INITIAL_CLIENTS = [
   { id: 'c5', name: 'NAKI Autopeças', handle: 'nakiautopecas', color: 'from-red-600 to-red-800' }
 ];
 
-// --- COMPONENTE DE CARROSSEL ---
+// --- COMPONENTE DE CARROSSEL (LOGICA DE VISUALIZAÇÃO MANTIDA) ---
 const MediaCarousel = ({ media, isPreview = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const mediaArr = Array.isArray(media) ? media : (media ? [media] : []);
   if (mediaArr.length === 0) return <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200"><ImageIcon size={24} /></div>;
+  
   const next = (e) => { e.stopPropagation(); if (currentIndex < mediaArr.length - 1) setCurrentIndex(prev => prev + 1); };
   const prev = (e) => { e.stopPropagation(); if (currentIndex > 0) setCurrentIndex(prev => prev - 1); };
 
@@ -107,15 +108,20 @@ export default function App() {
   const handleMediaUpload = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
-    const newMedia = files.map(file => ({ 
+    const newMediaItems = files.map(file => ({ 
       type: file.type.startsWith('video') ? 'video' : 'image', 
       url: URL.createObjectURL(file), 
       file: file 
     }));
-    setFormState(prev => ({ 
-      ...prev, 
-      media: prev.postType === 'carrossel' ? [...(Array.isArray(prev.media) ? prev.media : (prev.media ? [prev.media] : [])), ...newMedia] : newMedia[0] 
-    }));
+
+    setFormState(prev => {
+      if (prev.postType === 'carrossel') {
+        const currentMedia = Array.isArray(prev.media) ? prev.media : (prev.media ? [prev.media] : []);
+        return { ...prev, media: [...currentMedia, ...newMediaItems] };
+      } else {
+        return { ...prev, media: newMediaItems[0] };
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -135,7 +141,7 @@ export default function App() {
             processedMedia.push({ type: m.type, url: downloadUrl });
           } else { processedMedia.push(m); }
         }
-        finalMediaData = formState.postType === 'carrossel' ? processedMedia : processedMedia[0];
+        finalMediaData = Array.isArray(formState.media) ? processedMedia : processedMedia[0];
       }
       const id = editingId || Date.now().toString();
       await setDoc(doc(db, 'agencias', 'aoki', 'posts', id), {
@@ -145,7 +151,7 @@ export default function App() {
       }, { merge: true });
       setIsModalOpen(false); setEditingId(null);
       setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' });
-    } catch (err) { alert("Erro de CORS ou permissão no Storage."); } finally { setIsUploading(false); }
+    } catch (err) { alert("Erro de CORS ou permissão."); } finally { setIsUploading(false); }
   };
 
   const handleSendFeedback = async (e) => {
@@ -158,7 +164,6 @@ export default function App() {
     setNewFeedbackMessage('');
   };
 
-  const deletePost = async (id) => { if (confirm("Apagar permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id)); };
   const changeStatus = (id, s) => setDoc(doc(db, 'agencias', 'aoki', 'posts', id), { status: s }, { merge: true });
   const currentClient = INITIAL_CLIENTS.find(c => c.id === activeClientId);
 
@@ -221,7 +226,7 @@ export default function App() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</span>
-                    <span className="text-[10px] text-indigo-600 font-black flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50"><Calendar size={14} /> {post.scheduleDate?.split('-').reverse().join('/')} às {post.scheduleTime}</span>
+                    <span className="text-[10px] text-indigo-600 font-black flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-xl border border-emerald-100/50"><Calendar size={14} /> {post.scheduleDate?.split('-').reverse().join('/')} às {post.scheduleTime}</span>
                   </div>
                 </div>
                 <div className="flex gap-6 items-start">
@@ -289,12 +294,12 @@ export default function App() {
 
       {/* MODAL ZOOM */}
       {zoomedPost && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4" onClick={() => setZoomedPost(null)}>
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-8" onClick={() => setZoomedPost(null)}>
           <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setZoomedPost(null)} className="absolute top-6 right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full"><XCircle size={24} /></button>
             <div className="w-full md:w-1/2 bg-slate-50 border-r border-slate-100 p-8 flex items-center justify-center min-h-[300px]"><div className="w-full max-w-sm aspect-[4/5] rounded-2xl overflow-hidden shadow-lg bg-white"><MediaCarousel media={zoomedPost.media} isPreview={true} /></div></div>
             <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto flex flex-col">
-               <div className="flex gap-2 mb-6"><span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{zoomedPost.postType}</span><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span></div>
+               <div className="flex gap-2 mb-6"><span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{zoomedPost.postType}</span><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : zoomedPost.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span></div>
                <h3 className="text-xl font-black text-slate-900 mb-2">Detalhes da Postagem</h3>
                <p className="text-sm font-bold text-indigo-600 flex items-center gap-2 mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={16} /> {zoomedPost.scheduleDate?.split('-').reverse().join('/')} às {zoomedPost.scheduleTime}</p>
                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-6 flex-1"><p className="text-sm text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">{zoomedPost.content}</p></div>
@@ -307,7 +312,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL NOVO POST */}
+      {/* MODAL NOVO POST (BOTÕES DE FORMATO VOLTARAM!) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
@@ -327,9 +332,17 @@ export default function App() {
                     </div>
                   </div>
                   <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Formato</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[{id:'estatico',icon:<Square size={16}/>,label:'Post'},{id:'carrossel',icon:<Layers size={16}/>,label:'Álbum'},{id:'reel',icon:<Film size={16}/>,label:'Vídeo'}].map(type => (
+                        <button key={type.id} type="button" onClick={() => { setFormState({...formState, postType: type.id, media: type.id === 'carrossel' ? (Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : [])) : (Array.isArray(formState.media) ? formState.media[0] : formState.media)}); }} className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Mídia (Upload p/ Storage)</label>
                     <input type="file" className="hidden" id="fileUp" onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
-                    <label htmlFor="fileUp" className="h-24 w-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100"><Plus size={24} className="text-indigo-500 mb-1" /><span className="text-[9px] font-black text-slate-500 uppercase">Upload</span></label>
+                    <label htmlFor="fileUp" className="h-24 w-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all"><Plus size={24} className="text-indigo-500 mb-1" /><span className="text-[9px] font-black text-slate-500 uppercase">Upload</span></label>
                     <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
                       {Array.isArray(formState.media) ? formState.media.map((m, i) => (
                         <div key={i} className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={m.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: p.media.filter((_, idx) => idx !== i)}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>
@@ -348,7 +361,6 @@ export default function App() {
                     </div>
                   </div>
                   <textarea required rows={5} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium outline-none resize-none" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Legenda do post..."></textarea>
-                  {/* BOX DE HASHTAGS (VOLTOU!) */}
                   <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
                 </div>
               </div>
