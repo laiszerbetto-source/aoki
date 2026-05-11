@@ -177,13 +177,19 @@ export default function App() {
 
   return (
     <>
-    <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden relative">
+    <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden">
       
       {/* SIDEBAR */}
       <aside className="w-full md:w-72 bg-white border-r border-slate-200 p-6 flex flex-col gap-8 h-full shrink-0">  
         <div className="flex items-center gap-3"><div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div><span className="font-black text-2xl tracking-tighter">SocialFlow</span></div>
         <div className="space-y-6">
-          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 text-center"><p className="text-[10px] font-black text-slate-400 uppercase mb-1">Marca Aoki</p><h3 className="text-lg font-black text-slate-800">{currentClient?.name}</h3></div>
+          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Marca Aoki</p>
+            {/* O SELECT VOLTOU! */}
+            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
+              {INITIAL_CLIENTS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
           <nav className="space-y-1">
              <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><LayoutGrid size={18} /> Feed</button>
              <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><Calendar size={18} /> Calendário</button>
@@ -198,6 +204,7 @@ export default function App() {
           <div className="mt-auto space-y-3">
              <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-xs border border-slate-200"><FileDown size={16} /> PDF</button>
              <button onClick={copyClientLink} className="w-full bg-slate-50 text-indigo-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-xs border border-indigo-100"><Share size={16} /> Link p/ Cliente</button>
+             <button onClick={() => { setEditingId(null); setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' }); setIsModalOpen(true); }} className="w-full bg-indigo-600 text-white py-4 rounded-[2rem] font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-xl"><Plus size={20} /> Novo Post</button>
           </div>
         )}
       </aside>
@@ -206,10 +213,11 @@ export default function App() {
         <header className="mb-10"><div className="flex items-center gap-2 mb-1"><div className={`w-4 h-4 rounded-lg bg-gradient-to-tr ${currentClient?.color}`} /><h2 className="text-3xl font-black text-slate-900 tracking-tight">{currentClient?.name}</h2></div><p className="text-slate-400 text-sm font-medium italic">{isClientView ? 'Aprovação de Conteúdo' : 'Dashboard Aoki'}</p></header>
 
         {mainView === 'feed' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 w-full items-start pb-24">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 w-full items-start">
             {filteredPosts.map(post => (
               <div key={post.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl transition-all overflow-hidden flex flex-col group h-[620px]">
                 
+                {/* 1. IMAGEM: METADE DO TAMANHO (OCUPA ~45% DO CARD) */}
                 <div className="h-[280px] w-full bg-slate-50 relative border-b border-slate-50 shrink-0">
                   <MediaCarousel media={post.media} />
                   <div className="absolute top-4 left-4 flex gap-2">
@@ -230,6 +238,7 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* 2. MEIO: CONTEÚDO COM ALTURA CONTROLADA */}
                 <div className="p-7 flex-1 flex flex-col min-h-0 overflow-hidden">
                   <div className="flex items-center gap-2 mb-4 text-indigo-600/50 bg-indigo-50/50 w-fit px-3 py-1.5 rounded-full border border-indigo-100/50 shrink-0">
                     <Calendar size={14} />
@@ -238,6 +247,7 @@ export default function App() {
                     </span>
                   </div>
 
+                  {/* LEGENDA: SCROLL INTERNO SE FOR MUITO GRANDE */}
                   <div className="flex-1 overflow-y-auto mb-4 scrollbar-hide">
                     <p className="text-slate-700 text-sm font-medium leading-relaxed italic">
                       "{post.content}"
@@ -250,6 +260,7 @@ export default function App() {
                     </p>
                   )}
 
+                  {/* 3. BASE: TRAVADA SEMPRE NO MESMO LUGAR */}
                   <div className="pt-5 border-t border-slate-50 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-1">
                       <button onClick={() => setZoomedPost(post)} className="p-2 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors" title="Zoom"><Maximize2 size={18} /></button>
@@ -281,7 +292,7 @@ export default function App() {
         )}
 
         {mainView === 'calendario' && (
-          <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden pb-24">
+          <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
              <div className="p-8 border-b border-slate-100 flex justify-center gap-6 items-center">
                 <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronLeft /></button>
                 <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">{currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}</h3>
@@ -317,17 +328,6 @@ export default function App() {
           </div>
         )}
       </main>
-
-      {/* BOTAO FLUTUANTE (FAB) DE NOVO POST */}
-      {!isClientView && (
-        <button 
-          onClick={() => { setEditingId(null); setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' }); setIsModalOpen(true); }}
-          className="fixed bottom-8 right-8 md:bottom-10 md:right-10 bg-indigo-600 text-white h-16 w-16 md:h-auto md:w-auto md:px-8 md:py-4 rounded-full font-black shadow-[0_10px_40px_-10px_rgba(79,70,229,0.8)] hover:bg-indigo-700 hover:-translate-y-1 transition-all z-40 flex items-center justify-center gap-3 group"
-        >
-          <Plus size={24} className="group-hover:rotate-90 transition-transform duration-300" /> 
-          <span className="hidden md:block uppercase tracking-widest text-[11px]">Novo Post</span>
-        </button>
-      )}
 
       {/* MODAL ZOOM */}
       {zoomedPost && (
