@@ -66,8 +66,8 @@ const MediaCarousel = ({ media, isPreview = false }) => {
       </div>
       {mediaArr.length > 1 && (
         <>
-          <button type="button" onClick={prev} className={`absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} w-6 h-6`}><ChevronLeft size={16} /></button>
-          <button type="button" onClick={next} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} w-6 h-6`}><ChevronRight size={16} /></button>
+          <button type="button" onClick={prev} className={`absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} w-6 h-6`}><ChevronLeft size={14} /></button>
+          <button type="button" onClick={next} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} w-6 h-6`}><ChevronRight size={14} /></button>
           {isPreview ? (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-black/30 backdrop-blur-md rounded-full">
               {mediaArr.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />)}
@@ -112,14 +112,17 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('view') === 'client') setIsClientView(true);
-    signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
-    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
-    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (currentClient) document.title = isClientView ? `Aprovação: ${currentClient.name} | Aoki` : `${currentClient.name} | SocialFlow Aoki`;
   }, [currentClient, isClientView]);
+
+  useEffect(() => {
+    signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
+    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -215,6 +218,12 @@ export default function App() {
     setNewFeedbackMessage('');
   };
 
+  const getDaysInMonth = (date) => {
+    const year = date.getFullYear(); const month = date.getMonth();
+    const firstDay = new Date(year, month, 1).getDay(); const days = new Date(year, month + 1, 0).getDate();
+    return { firstDay, days };
+  };
+
   const changePostStatus = (id, newStatus, e) => {
     if (e) e.stopPropagation();
     setDoc(doc(db, 'agencias', 'aoki', 'posts', id), { status: newStatus }, { merge: true });
@@ -224,43 +233,45 @@ export default function App() {
 
   return (
     <>
-    <div className="fixed inset-0 flex bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden relative">
+    {/* CONTAINER PRINCIPAL FIXO PARA DESKTOP */}
+    <div className="fixed inset-0 flex bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden">
       
-      {/* SIDEBAR DESKTOP CLEAN */}
-      <aside className="w-72 bg-white border-r border-slate-200 p-8 flex flex-col gap-8 h-full shrink-0 z-20">  
+      {/* SIDEBAR FIXA */}
+      <aside className="w-72 bg-white border-r border-slate-200 p-8 flex flex-col gap-8 h-full shrink-0 z-20 shadow-sm">  
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div>
+          <div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div>
           <span className="font-black text-2xl tracking-tighter">SocialFlow</span>
         </div>
 
         <div className="space-y-6">
           <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Briefcase size={14} /> Marca Aoki</p>
-            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer shadow-sm" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Briefcase size={12} /> Marca Aoki</p>
+            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
               {INITIAL_CLIENTS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <nav className="space-y-1">
              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-4">Visualização</p>
-             <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}><LayoutGrid size={20} /> Feed</button>
-             <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}><Calendar size={20} /> Calendário</button>
+             <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><LayoutGrid size={18} /> Feed</button>
+             <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><Calendar size={18} /> Calendário</button>
           </nav>
           <nav className="space-y-1">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-4">Status</p>
             {[{ id: 'todos', label: 'Todos', icon: <Eye size={18} /> }, { id: 'pendente', label: 'Pendentes', icon: <Clock size={18} className="text-amber-500" /> }, { id: 'aprovado', label: 'Aprovados', icon: <CheckCircle2 size={18} className="text-emerald-500" /> }, { id: 'rejeitado', label: 'Rejeitados', icon: <XCircle size={18} className="text-rose-500" /> }].map(t => (
-              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl text-sm transition-all ${activeTab === t.id ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}>{t.icon} {t.label}</button>
+              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all ${activeTab === t.id ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}>{t.icon} {t.label}</button>
             ))}
           </nav>
         </div>
 
         {!isClientView && (
           <div className="mt-auto space-y-3">
-             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all text-xs border border-slate-200 shadow-sm"><FileDown size={16} /> Exportar PDF</button>
-             <button onClick={copyClientLink} className="w-full bg-indigo-50 text-indigo-600 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-100 transition-all text-xs border border-indigo-100 shadow-sm"><Share size={16} /> Link p/ Cliente</button>
+             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all text-xs border border-slate-200"><FileDown size={16} /> Exportar PDF</button>
+             <button onClick={copyClientLink} className="w-full bg-slate-100 text-indigo-600 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-all text-xs border border-slate-200"><Share size={16} /> Link p/ Cliente</button>
           </div>
         )}
       </aside>
 
+      {/* ÁREA PRINCIPAL */}
       <main className="flex-1 h-full overflow-y-auto p-10 min-w-0">
         <header className="mb-10 flex justify-between items-center">
           <div>
@@ -273,38 +284,45 @@ export default function App() {
         </header>
 
         {mainView === 'feed' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8 w-full items-start pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 w-full items-start pb-24">
             {filteredPosts.length === 0 ? (
-              <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center col-span-full text-slate-400 font-bold uppercase text-xs tracking-widest"><ImageIcon className="w-16 h-16 mb-6 text-slate-200" /> Sem rascunhos no momento</div>
+              <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center col-span-full text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
             ) : (
               filteredPosts.map(post => (
-                <div key={post.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl transition-all overflow-hidden flex flex-col h-[600px] group">
+                <div key={post.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden flex flex-col group h-[620px]">
                   
                   {/* IMAGEM E STATUS */}
-                  <div className="h-[260px] w-full bg-slate-50 relative border-b border-slate-100 shrink-0">
+                  <div className="h-[280px] w-full bg-slate-50 relative border-b border-slate-50 shrink-0">
                     <MediaCarousel media={post.media} isPreview={false} />
                     <div className="absolute top-4 left-4 flex gap-2">
                       {post.platforms.map(plt => (
-                        <div key={plt} className="p-2 bg-white/95 backdrop-blur-md rounded-xl shadow-sm text-indigo-600 border border-white">
+                        <div key={plt} className="p-2 bg-white/90 backdrop-blur-md rounded-xl shadow-sm text-indigo-600 border border-white">
                           {plt === 'instagram' && <Instagram size={14} />}
                           {plt === 'facebook' && <Facebook size={14} />}
                           {plt === 'linkedin' && <Linkedin size={14} />}
                         </div>
                       ))}
                     </div>
+                    <div className="absolute top-4 right-4">
+                      <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black backdrop-blur-md shadow-sm border uppercase ${
+                        post.status === 'aprovado' ? 'bg-emerald-500/90 text-white border-emerald-400' : 
+                        post.status === 'rejeitado' ? 'bg-rose-500/90 text-white border-rose-400' : 
+                        'bg-amber-400/90 text-white border-amber-300'
+                      }`}>{post.status}</span>
+                    </div>
                   </div>
 
                   {/* CONTEÚDO */}
-                  <div className="p-8 flex-1 flex flex-col min-h-0">
+                  <div className="p-8 flex-1 flex flex-col min-h-0 overflow-hidden">
                     <div className="flex justify-between items-center mb-5 shrink-0">
-                      <div className="flex items-center gap-2 text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
+                      <div className="flex items-center gap-2 text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
                         <Calendar size={14} />
                         <span className="text-[10px] font-black uppercase tracking-widest">
                           {post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}
                         </span>
                       </div>
                       
-                      {!isClientView ? (
+                      {!isClientView && (
                         <select 
                           value={post.status} 
                           onChange={(e) => changePostStatus(post.id, e.target.value, e)}
@@ -314,14 +332,11 @@ export default function App() {
                           <option value="aprovado">Aprovado</option>
                           <option value="rejeitado">Rejeitado</option>
                         </select>
-                      ) : (
-                        <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                          {post.status}
-                        </span>
                       )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto mb-4 scrollbar-hide pr-2">
+                    <div className="flex-1 overflow-y-auto mb-4 scrollbar-hide">
+                      {activeClientId === 'geral' && <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">{INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}</p>}
                       <p className="text-slate-700 text-sm font-medium leading-relaxed italic whitespace-pre-wrap">"{post.content}"</p>
                     </div>
                     
@@ -331,29 +346,29 @@ export default function App() {
                       </p>
                     )}
 
-                    {/* BASE INQUEBRÁVEL */}
+                    {/* BASE: BOTÕES LADO A LADO SEMPRE ALINHADOS */}
                     <div className="pt-6 border-t border-slate-50 flex items-center justify-between shrink-0">
                       <div className="flex items-center gap-1.5">
-                        <button onClick={() => setZoomedPost(post)} className="p-2.5 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors" title="Zoom"><Maximize2 size={16} /></button>
+                        <button onClick={() => setZoomedPost(post)} className="p-2.5 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors" title="Ampliar"><Maximize2 size={16} /></button>
                         <button onClick={() => setFeedbackPost(post)} className="p-2.5 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-100 relative transition-colors" title="Chat">
                           <MessageSquare size={16} />
-                          {post.feedbacks?.length > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white"></span>}
+                          {post.feedbacks?.length > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white animate-pulse"></span>}
                         </button>
                         
                         {!isClientView && (
                           <>
                             <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors" title="Editar"><Edit3 size={16} /></button>
-                            <button onClick={() => deletePost(post.id)} className="p-2.5 bg-slate-50 text-slate-300 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-colors" title="Excluir"><Trash2 size={16} /></button>
+                            <button onClick={() => deletePost(post.id)} className="p-2.5 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 hover:bg-rose-50 transition-colors" title="Excluir"><Trash2 size={16} /></button>
                           </>
                         )}
                       </div>
                       
                       <div className="flex gap-2 shrink-0">
                         {post.status !== 'rejeitado' && (
-                          <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="px-4 py-2.5 bg-slate-50 text-rose-500 rounded-xl text-[10px] font-black border border-rose-100 hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>
+                          <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="px-5 py-2.5 bg-slate-50 text-rose-500 rounded-[1.2rem] text-[10px] font-black border border-rose-100 hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>
                         )}
                         {post.status !== 'aprovado' && (
-                          <button onClick={() => changePostStatus(post.id, 'aprovado')} className="px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-[10px] font-black shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>
+                          <button onClick={() => changePostStatus(post.id, 'aprovado')} className="px-5 py-2.5 bg-emerald-500 text-white rounded-[1.2rem] text-[10px] font-black shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>
                         )}
                       </div>
                     </div>
@@ -367,15 +382,17 @@ export default function App() {
         {/* VIEW: CALENDÁRIO COM DRAG AND DROP */}
         {mainView === 'calendario' && (
           <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden pb-24">
-            <div className="p-8 border-b border-slate-100 flex justify-center items-center gap-8">
-               <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400 transition-colors"><ChevronLeft size={24} /></button>
-               <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">{currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}</h3>
-               <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400 transition-colors"><ChevronRight size={24} /></button>
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center gap-4">
+               <div className="flex items-center gap-6">
+                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronLeft /></button>
+                  <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">{currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}</h3>
+                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronRight /></button>
+               </div>
             </div>
 
             <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-100">
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-                <div key={d} className="py-4 text-center text-xs font-black uppercase tracking-[0.2em] text-slate-400">{d}</div>
+                <div key={d} className="py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{d}</div>
               ))}
             </div>
 
@@ -403,22 +420,22 @@ export default function App() {
                       className="border-r border-b border-slate-100 p-3 flex flex-col gap-1.5 hover:bg-slate-50 transition-colors group"
                     >
                       <span className="text-xs font-black text-slate-300 group-hover:text-indigo-600">{d}</span>
-                      <div className="flex-1 overflow-y-auto space-y-2 scrollbar-hide">
+                      <div className="flex-1 overflow-y-auto space-y-1.5 scrollbar-hide">
                         {dayPosts.map(p => (
                           <div 
                             key={p.id}
                             draggable={!isClientView}
                             onDragStart={(e) => e.dataTransfer.setData('postId', p.id)}
                             onClick={() => setZoomedPost(p)}
-                            className={`p-2 rounded-xl border flex flex-col gap-1 cursor-pointer hover:scale-[1.02] shadow-sm transition-transform ${
+                            className={`p-1.5 rounded-lg border flex flex-col gap-1 cursor-pointer hover:scale-[1.02] shadow-sm ${
                               p.status === 'aprovado' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-amber-50/50 border-amber-100'
                             }`}
                           >
                              <div className="flex justify-between items-center pointer-events-none">
-                                <span className="text-[9px] font-black text-slate-500">{p.scheduleTime}</span>
-                                {p.media && <div className="w-5 h-5 rounded-md overflow-hidden bg-slate-200"><img src={Array.isArray(p.media) ? p.media[0].url : p.media.url} className="w-full h-full object-cover" /></div>}
+                                <span className="text-[8px] font-black text-slate-500">{p.scheduleTime}</span>
+                                {p.media && <div className="w-4 h-4 rounded-sm overflow-hidden bg-slate-200"><img src={Array.isArray(p.media) ? p.media[0].url : p.media.url} className="w-full h-full object-cover" /></div>}
                              </div>
-                             <p className="text-[9px] font-medium text-slate-700 line-clamp-2 leading-tight pointer-events-none">{p.content}</p>
+                             <p className="text-[8px] font-medium text-slate-700 line-clamp-2 leading-tight pointer-events-none">{p.content}</p>
                           </div>
                         ))}
                       </div>
@@ -439,7 +456,7 @@ export default function App() {
           className="fixed bottom-10 right-10 bg-indigo-600 text-white px-8 py-4 rounded-full font-black shadow-[0_10px_40px_-10px_rgba(79,70,229,0.8)] hover:bg-indigo-700 hover:-translate-y-1 transition-all z-40 flex items-center justify-center gap-3 group"
         >
           <Plus size={24} className="group-hover:rotate-90 transition-transform duration-300" /> 
-          <span className="uppercase tracking-widest text-xs">Novo Post</span>
+          <span className="uppercase tracking-widest text-[11px]">Novo Post</span>
         </button>
       )}
 
