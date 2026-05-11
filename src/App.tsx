@@ -20,7 +20,7 @@ const Linkedin = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
 );
 
-// --- CONFIGURAÇÃO DO FIREBASE (AOKI) ---
+// --- CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
   apiKey: "AIzaSyARH2lOjbz9fQsOVJ25y-IQdzuMnfbfpRE",
   authDomain: "aoki-7a6ec.firebaseapp.com",
@@ -59,21 +59,21 @@ const MediaCarousel = ({ media, isPreview = false }) => {
     <div className="relative w-full h-full group/carousel overflow-hidden bg-white rounded-inherit">
       <div className="flex w-full h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
         {mediaArr.map((m, i) => (
-          <div key={i} className="w-full h-full shrink-0 flex items-center justify-center relative bg-white">
-            {m.type === 'video' ? <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center"><Film size={20} /></div> : <img src={m.url} className={`w-full h-full object-contain ${!isPreview && 'p-1'}`} />}
+          <div key={i} className="w-full h-full shrink-0 flex items-center justify-center relative bg-slate-100">
+            {m.type === 'video' ? <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center"><Film size={20} /></div> : <img src={m.url} className={`w-full h-full ${isPreview ? 'object-contain' : 'object-cover'}`} />}
           </div>
         ))}
       </div>
       {mediaArr.length > 1 && (
         <>
-          <button type="button" onClick={prev} className={`absolute left-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}><ChevronLeft size={isPreview ? 20 : 14} /></button>
-          <button type="button" onClick={next} className={`absolute right-1 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-8 h-8' : 'w-5 h-5'}`}><ChevronRight size={isPreview ? 20 : 14} /></button>
+          <button type="button" onClick={prev} className={`absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-10 h-10' : 'w-6 h-6'}`}><ChevronLeft size={isPreview ? 24 : 16} /></button>
+          <button type="button" onClick={next} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-10 h-10' : 'w-6 h-6'}`}><ChevronRight size={isPreview ? 24 : 16} /></button>
           {isPreview ? (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-black/30 backdrop-blur-md rounded-full">
-              {mediaArr.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />)}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/40 backdrop-blur-md rounded-full">
+              {mediaArr.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full shadow-sm transition-all duration-300 ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />)}
             </div>
           ) : (
-            <span className="absolute top-1 right-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md z-10 backdrop-blur-sm">{currentIndex + 1}/{mediaArr.length}</span>
+            <span className="absolute top-2 right-2 bg-slate-900/70 text-white text-[9px] font-black px-2 py-1 rounded-md z-10 backdrop-blur-sm">{currentIndex + 1}/{mediaArr.length}</span>
           )}
         </>
       )}
@@ -282,17 +282,17 @@ export default function App() {
         </header>
 
         {mainView === 'feed' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 w-full items-start content-start pb-24">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 w-full items-start content-start pb-24">
             {filteredPosts.length === 0 ? (
-              <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] md:rounded-[3rem] p-10 md:p-20 text-center flex flex-col items-center md:col-span-2 xl:col-span-3 text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
+              <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] md:rounded-[3rem] p-10 md:p-20 text-center flex flex-col items-center col-span-full text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
             ) : (
               filteredPosts.map(post => (
-                <div key={post.id} className="bg-white rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-sm transition-all hover:shadow-xl overflow-hidden flex flex-col group h-full min-h-[480px]">
+                <div key={post.id} className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-200 shadow-sm transition-all hover:shadow-xl flex flex-col group h-full">
                   
-                  {/* IMAGEM E STATUS */}
-                  <div className="aspect-square md:aspect-[4/3] w-full bg-slate-50 relative border-b border-slate-50 shrink-0">
+                  {/* IMAGEM E STATUS (ESTRUTURA CORRIGIDA PARA MÁXIMA QUALIDADE) */}
+                  <div className="w-full bg-slate-50 relative border-b border-slate-50 shrink-0 aspect-[4/5] sm:aspect-square md:aspect-[4/3] overflow-hidden rounded-t-[2rem] md:rounded-t-[2.5rem]">
                     <MediaCarousel media={post.media} isPreview={false} />
-                    <div className="absolute top-4 left-4 flex gap-2">
+                    <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
                       {post.platforms.map(plt => (
                         <div key={plt} className="p-2 bg-white/90 backdrop-blur-md rounded-xl shadow-sm text-indigo-600 border border-white">
                           {plt === 'instagram' && <Instagram size={14} />}
@@ -301,39 +301,29 @@ export default function App() {
                         </div>
                       ))}
                     </div>
+                    <div className="absolute top-3 right-3">
+                      <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black backdrop-blur-md shadow-sm border uppercase ${
+                        post.status === 'aprovado' ? 'bg-emerald-500/90 text-white border-emerald-400' : 
+                        post.status === 'rejeitado' ? 'bg-rose-500/90 text-white border-rose-400' : 
+                        'bg-amber-400/90 text-white border-amber-300'
+                      }`}>{post.status}</span>
+                    </div>
                   </div>
 
-                  {/* CONTEÚDO COM ALTURA ADAPTÁVEL */}
-                  <div className="p-5 md:p-7 flex-1 flex flex-col">
-                    <div className="flex justify-between items-center mb-4 shrink-0 gap-2 flex-wrap">
-                      <div className="flex items-center gap-2 text-indigo-600/50 bg-indigo-50/50 w-fit px-3 py-1.5 rounded-full border border-indigo-100/50">
-                        <Calendar size={14} />
+                  {/* CONTEÚDO */}
+                  <div className="p-5 md:p-6 flex-1 flex flex-col min-h-0">
+                    <div className="flex justify-between items-start mb-4 shrink-0 gap-2">
+                      <div className="flex items-center gap-2 text-indigo-600/60 bg-indigo-50/50 w-fit px-3 py-1.5 rounded-full border border-indigo-100/50">
+                        <Calendar size={12} />
                         <span className="text-[9px] md:text-[10px] font-black uppercase tracking-tight">
                           {post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}
                         </span>
                       </div>
-                      
-                      {!isClientView && (
-                        <select 
-                          value={post.status} 
-                          onChange={(e) => changePostStatus(post.id, e.target.value, e)}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase border outline-none cursor-pointer appearance-none text-center ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}
-                        >
-                          <option value="pendente">Pendente</option>
-                          <option value="aprovado">Aprovado</option>
-                          <option value="rejeitado">Rejeitado</option>
-                        </select>
-                      )}
-                      {isClientView && (
-                         <span className={`px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase border text-center ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
-                           {post.status}
-                         </span>
-                      )}
                     </div>
 
                     <div className="mb-4">
                       {activeClientId === 'geral' && <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">{INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}</p>}
-                      <p className="text-slate-700 text-sm font-medium leading-relaxed italic break-words">"{post.content}"</p>
+                      <p className="text-slate-700 text-sm font-medium leading-relaxed italic break-words line-clamp-4">"{post.content}"</p>
                     </div>
                     
                     {post.hashtags && (
@@ -342,26 +332,35 @@ export default function App() {
                       </p>
                     )}
 
-                    {/* BASE RESPONSIVA (SEM ESPREMIMENTO) */}
-                    <div className="mt-auto pt-5 border-t border-slate-50 flex flex-wrap items-center justify-between gap-y-4 shrink-0">
-                      <div className="flex items-center gap-1 w-full md:w-auto justify-center md:justify-start">
-                        <button onClick={() => setZoomedPost(post)} className="p-2.5 md:p-2 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors flex-shrink-0" title="Ampliar"><Maximize2 size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                        <button onClick={() => setFeedbackPost(post)} className="p-2.5 md:p-2 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-50 border border-transparent transition-all flex-shrink-0 relative" title="Chat">
-                          <MessageSquare size={16} className="md:w-[18px] md:h-[18px]" />
-                          {post.feedbacks?.length > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white animate-pulse"></span>}
-                        </button>
+                    {/* BASE INQUEBRÁVEL: LINHAS EMPILHADAS (FIM DO ESMAGAMENTO) */}
+                    <div className="mt-auto pt-4 border-t border-slate-50 flex flex-col gap-3 shrink-0">
+                      
+                      {/* Linha 1: Ferramentas Centradas */}
+                      <div className="flex items-center justify-between bg-slate-50 p-1.5 rounded-2xl">
+                        <div className="flex gap-1">
+                          <button onClick={() => setZoomedPost(post)} className="p-2 text-indigo-600 hover:bg-white hover:shadow-sm rounded-xl transition-all" title="Ampliar"><Maximize2 size={16} /></button>
+                          <button onClick={() => setFeedbackPost(post)} className="p-2 text-indigo-500 hover:bg-white hover:shadow-sm rounded-xl relative transition-all" title="Chat">
+                            <MessageSquare size={16} />
+                            {post.feedbacks?.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full border-2 border-white"></span>}
+                          </button>
+                        </div>
                         
                         {!isClientView && (
-                          <>
-                            <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2.5 md:p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors flex-shrink-0" title="Editar"><Edit3 size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                            <button onClick={() => deletePost(post.id)} className="p-2.5 md:p-2 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 hover:bg-rose-50 transition-colors flex-shrink-0" title="Excluir"><Trash2 size={16} className="md:w-[18px] md:h-[18px]" /></button>
-                          </>
+                          <div className="flex gap-1">
+                            <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2 text-slate-400 hover:bg-white hover:text-indigo-600 hover:shadow-sm rounded-xl transition-all" title="Editar"><Edit3 size={16} /></button>
+                            <button onClick={() => deletePost(post.id)} className="p-2 text-slate-300 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-all" title="Excluir"><Trash2 size={16} /></button>
+                          </div>
                         )}
                       </div>
                       
-                      <div className="flex gap-2 w-full md:w-auto justify-stretch">
-                        {post.status !== 'rejeitado' && <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="flex-1 md:flex-none bg-slate-50 text-rose-500 px-3 md:px-4 py-3 md:py-2 rounded-xl md:rounded-[1.2rem] text-[10px] md:text-[10px] font-black border border-rose-100 truncate hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>}
-                        {post.status !== 'aprovado' && <button onClick={() => changePostStatus(post.id, 'aprovado')} className="flex-1 md:flex-none bg-emerald-500 text-white px-3 md:px-4 py-3 md:py-2 rounded-xl md:rounded-[1.2rem] text-[10px] md:text-[10px] font-black shadow-lg truncate hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>}
+                      {/* Linha 2: Ações Divididas 50/50 em Grid */}
+                      <div className="grid grid-cols-2 gap-2 w-full">
+                        {post.status !== 'rejeitado' ? (
+                          <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="w-full bg-white text-rose-500 py-3 rounded-xl text-[9px] md:text-[10px] font-black border border-rose-100 hover:bg-rose-50 transition-colors uppercase tracking-widest">Rejeitar</button>
+                        ) : <div />}
+                        {post.status !== 'aprovado' ? (
+                          <button onClick={() => changePostStatus(post.id, 'aprovado')} className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[9px] md:text-[10px] font-black shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>
+                        ) : <div />}
                       </div>
                     </div>
                   </div>
