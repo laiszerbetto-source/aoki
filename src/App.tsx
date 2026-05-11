@@ -9,7 +9,7 @@ import {
   Hash, Check, Layers, Square, ThumbsUp, MessageSquare, Share2, Edit3, Globe, Calendar, AlertCircle, Briefcase, Loader2, Share, ChevronLeft, ChevronRight, LayoutGrid, FileDown, SendHorizonal, Maximize2
 } from 'lucide-react';
 
-// --- ÍCONES DE REDES SOCIAIS (SVG Direto) ---
+// --- ÍCONES DE REDES SOCIAIS ---
 const Instagram = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
 );
@@ -44,12 +44,10 @@ const INITIAL_CLIENTS = [
   { id: 'c5', name: 'NAKI Autopeças', handle: 'nakiautopecas', color: 'from-red-600 to-red-800' }
 ];
 
-// --- COMPONENTE DE CARROSSEL (LOGICA DE VISUALIZAÇÃO MANTIDA) ---
 const MediaCarousel = ({ media, isPreview = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const mediaArr = Array.isArray(media) ? media : (media ? [media] : []);
   if (mediaArr.length === 0) return <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-200"><ImageIcon size={24} /></div>;
-  
   const next = (e) => { e.stopPropagation(); if (currentIndex < mediaArr.length - 1) setCurrentIndex(prev => prev + 1); };
   const prev = (e) => { e.stopPropagation(); if (currentIndex > 0) setCurrentIndex(prev => prev - 1); };
 
@@ -108,19 +106,13 @@ export default function App() {
   const handleMediaUpload = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
-    const newMediaItems = files.map(file => ({ 
-      type: file.type.startsWith('video') ? 'video' : 'image', 
-      url: URL.createObjectURL(file), 
-      file: file 
-    }));
-
+    const newMediaItems = files.map(file => ({ type: file.type.startsWith('video') ? 'video' : 'image', url: URL.createObjectURL(file), file: file }));
     setFormState(prev => {
       if (prev.postType === 'carrossel') {
         const currentMedia = Array.isArray(prev.media) ? prev.media : (prev.media ? [prev.media] : []);
         return { ...prev, media: [...currentMedia, ...newMediaItems] };
-      } else {
-        return { ...prev, media: newMediaItems[0] };
       }
+      return { ...prev, media: newMediaItems[0] };
     });
   };
 
@@ -141,7 +133,7 @@ export default function App() {
             processedMedia.push({ type: m.type, url: downloadUrl });
           } else { processedMedia.push(m); }
         }
-        finalMediaData = Array.isArray(formState.media) ? processedMedia : processedMedia[0];
+        finalMediaData = formState.postType === 'carrossel' ? processedMedia : processedMedia[0];
       }
       const id = editingId || Date.now().toString();
       await setDoc(doc(db, 'agencias', 'aoki', 'posts', id), {
@@ -151,7 +143,7 @@ export default function App() {
       }, { merge: true });
       setIsModalOpen(false); setEditingId(null);
       setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' });
-    } catch (err) { alert("Erro de CORS ou permissão."); } finally { setIsUploading(false); }
+    } catch (err) { alert("Erro ao guardar."); } finally { setIsUploading(false); }
   };
 
   const handleSendFeedback = async (e) => {
@@ -164,9 +156,17 @@ export default function App() {
     setNewFeedbackMessage('');
   };
 
+  const deletePost = async (id) => { if (confirm("Apagar permanentemente?")) await deleteDoc(doc(db, 'agencias', 'aoki', 'posts', id)); };
   const changeStatus = (id, s) => setDoc(doc(db, 'agencias', 'aoki', 'posts', id), { status: s }, { merge: true });
-  const currentClient = INITIAL_CLIENTS.find(c => c.id === activeClientId);
+  
+  const copyClientLink = () => {
+    const url = new URL(window.location.href); url.searchParams.set('view', 'client');
+    const dummy = document.createElement("input"); document.body.appendChild(dummy);
+    dummy.value = url.href; dummy.select(); document.execCommand("copy");
+    document.body.removeChild(dummy); alert("Link do Cliente copiado!");
+  };
 
+  const currentClient = INITIAL_CLIENTS.find(c => c.id === activeClientId);
   if (isLoading) return <div className="h-screen flex items-center justify-center font-black text-indigo-600 animate-pulse">Sincronizando Aoki...</div>;
 
   const filteredPosts = posts.filter(p => {
@@ -183,12 +183,7 @@ export default function App() {
       <aside className="w-full md:w-72 bg-white border-r border-slate-200 p-6 flex flex-col gap-8 h-full shrink-0">  
         <div className="flex items-center gap-3"><div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div><span className="font-black text-2xl tracking-tighter">SocialFlow</span></div>
         <div className="space-y-6">
-          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Marca Aoki</p>
-            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
-              {INITIAL_CLIENTS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
+          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 text-center"><p className="text-[10px] font-black text-slate-400 uppercase mb-1">Marca Aoki</p><h3 className="text-lg font-black text-slate-800">{currentClient?.name}</h3></div>
           <nav className="space-y-1">
              <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><LayoutGrid size={18} /> Feed</button>
              <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><Calendar size={18} /> Calendário</button>
@@ -201,52 +196,65 @@ export default function App() {
         </div>
         {!isClientView && (
           <div className="mt-auto space-y-3">
-             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-xs border border-slate-200"><FileDown size={16} /> Exportar PDF</button>
+             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-xs border border-slate-200"><FileDown size={16} /> PDF</button>
+             <button onClick={copyClientLink} className="w-full bg-slate-50 text-indigo-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 text-xs border border-indigo-100"><Share size={16} /> Link p/ Cliente</button>
              <button onClick={() => { setEditingId(null); setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' }); setIsModalOpen(true); }} className="w-full bg-indigo-600 text-white py-4 rounded-[2rem] font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-xl"><Plus size={20} /> Novo Post</button>
           </div>
         )}
       </aside>
 
       <main className="flex-1 h-full overflow-y-auto p-5 md:p-10 min-w-0">
-        <header className="mb-10"><div className="flex items-center gap-2 mb-1"><div className={`w-4 h-4 rounded-lg bg-gradient-to-tr ${currentClient?.color}`} /><h2 className="text-3xl font-black text-slate-900 tracking-tight">{currentClient?.name}</h2></div><p className="text-slate-400 text-sm font-medium italic">Dashboard Aoki</p></header>
+        <header className="mb-10"><div className="flex items-center gap-2 mb-1"><div className={`w-4 h-4 rounded-lg bg-gradient-to-tr ${currentClient?.color}`} /><h2 className="text-3xl font-black text-slate-900 tracking-tight">{currentClient?.name}</h2></div><p className="text-slate-400 text-sm font-medium italic">{isClientView ? 'Aprovação de Conteúdo' : 'Dashboard Aoki'}</p></header>
 
         {mainView === 'feed' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 w-full items-start">
             {filteredPosts.map(post => (
-              <div key={post.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all relative">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex gap-2">
+              <div key={post.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl transition-all overflow-hidden flex flex-col group">
+                <div className="aspect-square w-full bg-slate-50 relative border-b border-slate-50">
+                  <MediaCarousel media={post.media} />
+                  <div className="absolute top-4 left-4 flex gap-2">
                     {post.platforms.map(plt => (
-                      <div key={plt} className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-indigo-600">
-                        {plt === 'instagram' && <Instagram />}
-                        {plt === 'facebook' && <Facebook />}
-                        {plt === 'linkedin' && <Linkedin />}
+                      <div key={plt} className="p-2 bg-white/90 backdrop-blur-md rounded-xl shadow-sm text-indigo-600 border border-white">
+                        {plt === 'instagram' && <Instagram size={14} />}
+                        {plt === 'facebook' && <Facebook size={14} />}
+                        {plt === 'linkedin' && <Linkedin size={14} />}
                       </div>
                     ))}
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{post.status}</span>
-                    <span className="text-[10px] text-indigo-600 font-black flex items-center gap-1.5 bg-indigo-50 px-3 py-1.5 rounded-xl border border-emerald-100/50"><Calendar size={14} /> {post.scheduleDate?.split('-').reverse().join('/')} às {post.scheduleTime}</span>
+                  <div className="absolute top-4 right-4">
+                    <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black backdrop-blur-md shadow-sm border uppercase ${
+                      post.status === 'aprovado' ? 'bg-emerald-500/90 text-white border-emerald-400' : 
+                      post.status === 'rejeitado' ? 'bg-rose-500/90 text-white border-rose-400' : 
+                      'bg-amber-400/90 text-white border-amber-300'
+                    }`}>{post.status}</span>
                   </div>
                 </div>
-                <div className="flex gap-6 items-start">
-                  <div className="w-28 aspect-[4/5] shrink-0 rounded-2xl overflow-hidden border border-slate-100 relative bg-slate-50"><MediaCarousel media={post.media} /></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-slate-700 text-sm font-medium line-clamp-3 mb-2 whitespace-pre-wrap">{post.content}</p>
-                    <p className="text-indigo-600 text-[11px] font-black truncate">{post.hashtags}</p>
+                <div className="p-8 flex-1 flex flex-col">
+                  <div className="flex items-center gap-2 mb-4 text-indigo-600/50 bg-indigo-50/50 w-fit px-3 py-1.5 rounded-full border border-indigo-100/50">
+                    <Calendar size={14} />
+                    <span className="text-[10px] font-black uppercase tracking-tight">{post.scheduleDate?.split('-').reverse().join('/')} às {post.scheduleTime}</span>
                   </div>
-                </div>
-                <div className="flex items-center justify-between mt-6 pt-6 border-t border-slate-50">
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => setZoomedPost(post)} className="p-1.5 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 border border-slate-100"><Maximize2 size={16} /></button>
-                    <button onClick={() => setFeedbackPost(post)} className="p-1.5 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-50 border border-slate-100 relative"><MessageSquare size={16} />{post.feedbacks?.length > 0 && <span className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-white"></span>}</button>
-                    {!isClientView && (
-                      <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-1.5 bg-slate-50 text-slate-500 rounded-xl hover:bg-emerald-50 border border-slate-100"><Edit3 size={16} /></button>
-                    )}
-                  </div>
-                  <div className="flex gap-1.5">
-                    {post.status !== 'rejeitado' && <button onClick={() => changeStatus(post.id, 'rejeitado')} className="bg-slate-50 text-rose-500 px-3 py-1.5 rounded-xl text-[10px] font-black border border-rose-100 truncate hover:bg-rose-100">Rejeitar</button>}
-                    {post.status !== 'aprovado' && <button onClick={() => changeStatus(post.id, 'aprovado')} className="bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-black shadow-lg">Aprovar Post</button>}
+                  <p className="text-slate-700 text-sm font-medium leading-relaxed mb-4 whitespace-pre-wrap flex-1 italic italic">"{post.content}"</p>
+                  {post.hashtags && <p className="text-indigo-500 text-[11px] font-black mb-6 truncate">{post.hashtags}</p>}
+                  <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setZoomedPost(post)} className="p-2 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors" title="Zoom"><Maximize2 size={18} /></button>
+                      <button onClick={() => setFeedbackPost(post)} className="p-2 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-100 relative transition-colors" title="Chat">
+                        <MessageSquare size={18} />
+                        {post.feedbacks?.length > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white animate-pulse"></span>}
+                      </button>
+                      {/* SÓ MOSTRA EDIÇÃO E LIXEIRA SE NÃO FOR CLIENTE */}
+                      {!isClientView && (
+                        <>
+                          <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors" title="Editar"><Edit3 size={18} /></button>
+                          <button onClick={() => deletePost(post.id)} className="p-2 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 hover:bg-rose-50 transition-colors" title="Excluir"><Trash2 size={18} /></button>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      {post.status !== 'aprovado' && <button onClick={() => changeStatus(post.id, 'aprovado')} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-[1.2rem] text-[10px] font-black shadow-lg transition-all uppercase tracking-widest">Aprovar</button>}
+                      {post.status === 'pendente' && <button onClick={() => changeStatus(post.id, 'rejeitado')} className="bg-slate-50 text-rose-500 px-5 py-2.5 rounded-[1.2rem] text-[10px] font-black border border-rose-100 hover:bg-rose-100 transition-all uppercase tracking-widest">Rejeitar</button>}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -255,8 +263,8 @@ export default function App() {
         )}
 
         {mainView === 'calendario' && (
-          <div className="bg-white rounded-[3rem] border border-slate-200 overflow-hidden shadow-sm">
-             <div className="p-8 border-b border-slate-100 flex justify-center items-center gap-6">
+          <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden">
+             <div className="p-8 border-b border-slate-100 flex justify-center gap-6 items-center">
                 <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronLeft /></button>
                 <h3 className="text-xl font-black text-slate-800 uppercase tracking-tighter">{currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}</h3>
                 <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronRight /></button>
@@ -296,10 +304,10 @@ export default function App() {
       {zoomedPost && (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 md:p-8" onClick={() => setZoomedPost(null)}>
           <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex flex-col md:flex-row overflow-hidden max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setZoomedPost(null)} className="absolute top-6 right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full"><XCircle size={24} /></button>
+            <button onClick={() => setZoomedPost(null)} className="absolute top-6 right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><XCircle size={24} /></button>
             <div className="w-full md:w-1/2 bg-slate-50 border-r border-slate-100 p-8 flex items-center justify-center min-h-[300px]"><div className="w-full max-w-sm aspect-[4/5] rounded-2xl overflow-hidden shadow-lg bg-white"><MediaCarousel media={zoomedPost.media} isPreview={true} /></div></div>
             <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto flex flex-col">
-               <div className="flex gap-2 mb-6"><span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{zoomedPost.postType}</span><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : zoomedPost.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span></div>
+               <div className="flex gap-2 mb-6"><span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{zoomedPost.postType}</span><span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span></div>
                <h3 className="text-xl font-black text-slate-900 mb-2">Detalhes da Postagem</h3>
                <p className="text-sm font-bold text-indigo-600 flex items-center gap-2 mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={16} /> {zoomedPost.scheduleDate?.split('-').reverse().join('/')} às {zoomedPost.scheduleTime}</p>
                <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-6 flex-1"><p className="text-sm text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">{zoomedPost.content}</p></div>
@@ -312,7 +320,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL NOVO POST (BOTÕES DE FORMATO VOLTARAM!) */}
+      {/* MODAL NOVO POST */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
@@ -323,45 +331,19 @@ export default function App() {
             <form onSubmit={handleSubmit} className="p-8 space-y-10">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-8">
+                  <div><label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Destino</label><div className="flex gap-2">{['instagram', 'facebook', 'linkedin'].map(plt => (<button key={plt} type="button" onClick={() => setFormState(p => ({ ...p, platforms: p.platforms.includes(plt) ? p.platforms.filter(x => x !== plt) : [...p.platforms, plt] }))} className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[9px] uppercase ${formState.platforms.includes(plt) ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md' : 'border-slate-100 text-slate-400'}`}>{plt}</button>))}</div></div>
+                  <div><label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Formato</label><div className="grid grid-cols-3 gap-2">{[{id:'estatico',icon:<Square size={16}/>,label:'Post'},{id:'carrossel',icon:<Layers size={16}/>,label:'Álbum'},{id:'reel',icon:<Film size={16}/>,label:'Vídeo'}].map(type => (<button key={type.id} type="button" onClick={() => { setFormState({...formState, postType: type.id, media: type.id === 'carrossel' ? (Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : [])) : (Array.isArray(formState.media) ? formState.media[0] : formState.media)}); }} className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>))}</div></div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Destino</label>
-                    <div className="flex gap-2">
-                      {['instagram', 'facebook', 'linkedin'].map(plt => (
-                        <button key={plt} type="button" onClick={() => setFormState(p => ({ ...p, platforms: p.platforms.includes(plt) ? p.platforms.filter(x => x !== plt) : [...p.platforms, plt] }))} className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[9px] uppercase ${formState.platforms.includes(plt) ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md' : 'border-slate-100 text-slate-400'}`}>{plt}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Formato</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[{id:'estatico',icon:<Square size={16}/>,label:'Post'},{id:'carrossel',icon:<Layers size={16}/>,label:'Álbum'},{id:'reel',icon:<Film size={16}/>,label:'Vídeo'}].map(type => (
-                        <button key={type.id} type="button" onClick={() => { setFormState({...formState, postType: type.id, media: type.id === 'carrossel' ? (Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : [])) : (Array.isArray(formState.media) ? formState.media[0] : formState.media)}); }} className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Mídia (Upload p/ Storage)</label>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest text-[9px]">Mídia (5MB/10MB)</label>
                     <input type="file" className="hidden" id="fileUp" onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
-                    <label htmlFor="fileUp" className="h-24 w-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-all"><Plus size={24} className="text-indigo-500 mb-1" /><span className="text-[9px] font-black text-slate-500 uppercase">Upload</span></label>
-                    <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
-                      {Array.isArray(formState.media) ? formState.media.map((m, i) => (
-                        <div key={i} className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={m.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: p.media.filter((_, idx) => idx !== i)}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>
-                      )) : formState.media && (
-                        <div className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={formState.media.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: null}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>
-                      )}
-                    </div>
+                    <label htmlFor="fileUp" className="h-24 w-24 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100"><Plus size={24} className="text-indigo-500 mb-1" /><span className="text-[9px] font-black text-slate-500 uppercase">Upload</span></label>
+                    <div className="flex gap-2 mt-4 overflow-x-auto pb-2">{Array.isArray(formState.media) ? formState.media.map((m, i) => (<div key={i} className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={m.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: p.media.filter((_, idx) => idx !== i)}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>)) : formState.media && (<div className="h-20 w-20 shrink-0 relative rounded-2xl overflow-hidden border border-slate-200"><img src={formState.media.url} className="w-full h-full object-cover" /><button type="button" onClick={() => setFormState(p => ({...p, media: null}))} className="absolute top-1 right-1 bg-rose-500 text-white p-1 rounded-lg"><Trash2 size={12} /></button></div>)}</div>
                   </div>
                 </div>
                 <div className="space-y-8">
-                  <div className="bg-indigo-50/50 p-6 rounded-[2.5rem] border border-indigo-100">
-                    <label className="block text-[10px] font-black text-indigo-400 uppercase mb-4 tracking-widest">Agendamento</label>
-                    <div className="space-y-3">
-                      <input type="date" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleDate} onChange={(e) => setFormState({...formState, scheduleDate: e.target.value})} />
-                      <input type="time" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} />
-                    </div>
-                  </div>
+                  <div className="bg-indigo-50/50 p-6 rounded-[2.5rem] border border-indigo-100"><label className="block text-[10px] font-black text-indigo-400 uppercase mb-4 tracking-widest">Agendamento</label><div className="space-y-3"><input type="date" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleDate} onChange={(e) => setFormState({...formState, scheduleDate: e.target.value})} /><input type="time" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} /></div></div>
                   <textarea required rows={5} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium outline-none resize-none" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Legenda do post..."></textarea>
-                  <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
+                  <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#hashtags" />
                 </div>
               </div>
               <div className="flex gap-4 pt-6 border-t border-slate-50">
@@ -393,7 +375,7 @@ export default function App() {
               })}
             </div>
             <form onSubmit={handleSendFeedback} className="p-4 border-t border-slate-100 bg-slate-50 flex gap-2">
-              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Escreva o seu comentário..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium outline-none" />
+              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Escreva o seu comentário..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium outline-none focus:border-indigo-500 transition-colors" />
               <button type="submit" disabled={!newFeedbackMessage.trim()} className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all"><SendHorizonal size={20} /></button>
             </form>
           </div>
