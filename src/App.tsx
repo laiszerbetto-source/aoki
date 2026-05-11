@@ -20,7 +20,7 @@ const Linkedin = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
 );
 
-// --- CONFIGURAÇÃO DO FIREBASE ---
+// --- CONFIGURAÇÃO DO FIREBASE (AOKI) ---
 const firebaseConfig = {
   apiKey: "AIzaSyARH2lOjbz9fQsOVJ25y-IQdzuMnfbfpRE",
   authDomain: "aoki-7a6ec.firebaseapp.com",
@@ -59,21 +59,21 @@ const MediaCarousel = ({ media, isPreview = false }) => {
     <div className="relative w-full h-full group/carousel overflow-hidden bg-white rounded-inherit">
       <div className="flex w-full h-full transition-transform duration-300 ease-out" style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
         {mediaArr.map((m, i) => (
-          <div key={i} className="w-full h-full shrink-0 flex items-center justify-center relative bg-slate-100">
-            {m.type === 'video' ? <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center"><Film size={20} /></div> : <img src={m.url} className={`w-full h-full ${isPreview ? 'object-contain' : 'object-cover'}`} />}
+          <div key={i} className="w-full h-full shrink-0 flex items-center justify-center relative bg-white">
+            {m.type === 'video' ? <div className="w-full h-full bg-slate-900 text-white flex items-center justify-center"><Film size={20} /></div> : <img src={m.url} className={`w-full h-full object-contain ${!isPreview && 'p-1'}`} />}
           </div>
         ))}
       </div>
       {mediaArr.length > 1 && (
         <>
-          <button type="button" onClick={prev} className={`absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-10 h-10' : 'w-6 h-6'}`}><ChevronLeft size={isPreview ? 24 : 16} /></button>
-          <button type="button" onClick={next} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} ${isPreview ? 'w-10 h-10' : 'w-6 h-6'}`}><ChevronRight size={isPreview ? 24 : 16} /></button>
+          <button type="button" onClick={prev} className={`absolute left-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} w-6 h-6`}><ChevronLeft size={16} /></button>
+          <button type="button" onClick={next} className={`absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900/50 hover:bg-slate-900/80 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-opacity z-10 ${currentIndex === mediaArr.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover/carousel:opacity-100'} w-6 h-6`}><ChevronRight size={16} /></button>
           {isPreview ? (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/40 backdrop-blur-md rounded-full">
-              {mediaArr.map((_, i) => <div key={i} className={`w-2 h-2 rounded-full shadow-sm transition-all duration-300 ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />)}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 p-1.5 bg-black/30 backdrop-blur-md rounded-full">
+              {mediaArr.map((_, i) => <div key={i} className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all duration-300 ${i === currentIndex ? 'bg-white scale-125' : 'bg-white/50'}`} />)}
             </div>
           ) : (
-            <span className="absolute top-2 right-2 bg-slate-900/70 text-white text-[9px] font-black px-2 py-1 rounded-md z-10 backdrop-blur-sm">{currentIndex + 1}/{mediaArr.length}</span>
+            <span className="absolute top-2 right-2 bg-slate-900/60 text-white text-[9px] font-black px-2 py-1 rounded-md z-10 backdrop-blur-sm">{currentIndex + 1}/{mediaArr.length}</span>
           )}
         </>
       )}
@@ -112,17 +112,14 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('view') === 'client') setIsClientView(true);
+    signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
+    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (currentClient) document.title = isClientView ? `Aprovação: ${currentClient.name} | Aoki` : `${currentClient.name} | SocialFlow Aoki`;
   }, [currentClient, isClientView]);
-
-  useEffect(() => {
-    signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
-    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -218,12 +215,6 @@ export default function App() {
     setNewFeedbackMessage('');
   };
 
-  const getDaysInMonth = (date) => {
-    const year = date.getFullYear(); const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay(); const days = new Date(year, month + 1, 0).getDate();
-    return { firstDay, days };
-  };
-
   const changePostStatus = (id, newStatus, e) => {
     if (e) e.stopPropagation();
     setDoc(doc(db, 'agencias', 'aoki', 'posts', id), { status: newStatus }, { merge: true });
@@ -233,134 +224,137 @@ export default function App() {
 
   return (
     <>
-    <div className="fixed inset-0 flex flex-col md:flex-row bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden relative">
+    <div className="fixed inset-0 flex bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden relative">
       
-      {/* SIDEBAR RESPONSIVA */}
-      <aside className="w-full md:w-72 bg-white border-b md:border-r border-slate-200 p-5 md:p-6 flex flex-col gap-6 max-h-[35vh] md:max-h-none md:h-full overflow-y-auto overflow-x-hidden z-20 shrink-0 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">  
+      {/* SIDEBAR DESKTOP CLEAN */}
+      <aside className="w-72 bg-white border-r border-slate-200 p-8 flex flex-col gap-8 h-full shrink-0 z-20">  
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-600 p-2 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div>
+          <div className="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={24} /></div>
           <span className="font-black text-2xl tracking-tighter">SocialFlow</span>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Briefcase size={12} /> Marca Aoki</p>
-            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
+          <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2"><Briefcase size={14} /> Marca Aoki</p>
+            <select className="w-full bg-white border border-slate-200 text-sm font-bold rounded-xl px-4 py-3 outline-none cursor-pointer shadow-sm" value={activeClientId} onChange={(e) => setActiveClientId(e.target.value)}>
               {INITIAL_CLIENTS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
           <nav className="space-y-1">
              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-4">Visualização</p>
-             <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><LayoutGrid size={18} /> Feed</button>
-             <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}><Calendar size={18} /> Calendário</button>
+             <button onClick={() => setMainView('feed')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm transition-all ${mainView === 'feed' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}><LayoutGrid size={20} /> Feed</button>
+             <button onClick={() => setMainView('calendario')} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm transition-all ${mainView === 'calendario' ? 'bg-slate-900 text-white font-bold shadow-lg' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}><Calendar size={20} /> Calendário</button>
           </nav>
           <nav className="space-y-1">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-4">Status</p>
             {[{ id: 'todos', label: 'Todos', icon: <Eye size={18} /> }, { id: 'pendente', label: 'Pendentes', icon: <Clock size={18} className="text-amber-500" /> }, { id: 'aprovado', label: 'Aprovados', icon: <CheckCircle2 size={18} className="text-emerald-500" /> }, { id: 'rejeitado', label: 'Rejeitados', icon: <XCircle size={18} className="text-rose-500" /> }].map(t => (
-              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all ${activeTab === t.id ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-500 hover:bg-slate-50'}`}>{t.icon} {t.label}</button>
+              <button key={t.id} onClick={() => setActiveTab(t.id)} className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl text-sm transition-all ${activeTab === t.id ? 'bg-indigo-50 text-indigo-700 font-bold border border-indigo-100' : 'text-slate-500 hover:bg-slate-50 font-medium'}`}>{t.icon} {t.label}</button>
             ))}
           </nav>
         </div>
 
         {!isClientView && (
-          <div className="mt-auto space-y-3 pb-2 md:pb-0">
-             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all text-xs border border-slate-200"><FileDown size={16} /> Exportar PDF</button>
-             <button onClick={copyClientLink} className="w-full bg-slate-100 text-slate-600 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-all text-xs border border-slate-200"><Share size={16} /> Link p/ Cliente</button>
+          <div className="mt-auto space-y-3">
+             <button onClick={() => window.print()} className="w-full bg-slate-50 text-slate-600 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all text-xs border border-slate-200 shadow-sm"><FileDown size={16} /> Exportar PDF</button>
+             <button onClick={copyClientLink} className="w-full bg-indigo-50 text-indigo-600 py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-100 transition-all text-xs border border-indigo-100 shadow-sm"><Share size={16} /> Link p/ Cliente</button>
           </div>
         )}
       </aside>
 
-      <main className="flex-1 h-full overflow-y-auto overflow-x-hidden p-4 md:p-10 min-w-0 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-        <header className="mb-8 md:mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <main className="flex-1 h-full overflow-y-auto p-10 min-w-0">
+        <header className="mb-10 flex justify-between items-center">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`w-4 h-4 rounded-lg bg-gradient-to-tr ${currentClient?.color} shadow-sm`} />
-              <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">{currentClient?.name}</h2>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`w-5 h-5 rounded-lg bg-gradient-to-tr ${currentClient?.color} shadow-sm`} />
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">{currentClient?.name}</h2>
             </div>
-            <p className="text-slate-400 text-xs md:text-sm font-medium italic">{isClientView ? 'Aprovação de Conteúdo' : 'Dashboard Aoki'}</p>
+            <p className="text-slate-400 text-sm font-medium italic ml-8">{isClientView ? 'Aprovação de Conteúdo' : 'Dashboard Aoki'}</p>
           </div>
         </header>
 
         {mainView === 'feed' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 w-full items-start content-start pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8 w-full items-start pb-24">
             {filteredPosts.length === 0 ? (
-              <div className="bg-white border-2 border-dashed border-slate-200 rounded-[2rem] md:rounded-[3rem] p-10 md:p-20 text-center flex flex-col items-center col-span-full text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
+              <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center col-span-full text-slate-400 font-bold uppercase text-xs tracking-widest"><ImageIcon className="w-16 h-16 mb-6 text-slate-200" /> Sem rascunhos no momento</div>
             ) : (
               filteredPosts.map(post => (
-                <div key={post.id} className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-200 shadow-sm transition-all hover:shadow-xl flex flex-col group h-full">
+                <div key={post.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-2xl transition-all overflow-hidden flex flex-col h-[600px] group">
                   
-                  {/* IMAGEM E STATUS (ESTRUTURA CORRIGIDA PARA MÁXIMA QUALIDADE) */}
-                  <div className="w-full bg-slate-50 relative border-b border-slate-50 shrink-0 aspect-[4/5] sm:aspect-square md:aspect-[4/3] overflow-hidden rounded-t-[2rem] md:rounded-t-[2.5rem]">
+                  {/* IMAGEM E STATUS */}
+                  <div className="h-[260px] w-full bg-slate-50 relative border-b border-slate-100 shrink-0">
                     <MediaCarousel media={post.media} isPreview={false} />
-                    <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap max-w-[70%]">
+                    <div className="absolute top-4 left-4 flex gap-2">
                       {post.platforms.map(plt => (
-                        <div key={plt} className="p-2 bg-white/90 backdrop-blur-md rounded-xl shadow-sm text-indigo-600 border border-white">
+                        <div key={plt} className="p-2 bg-white/95 backdrop-blur-md rounded-xl shadow-sm text-indigo-600 border border-white">
                           {plt === 'instagram' && <Instagram size={14} />}
                           {plt === 'facebook' && <Facebook size={14} />}
                           {plt === 'linkedin' && <Linkedin size={14} />}
                         </div>
                       ))}
                     </div>
-                    <div className="absolute top-3 right-3">
-                      <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black backdrop-blur-md shadow-sm border uppercase ${
-                        post.status === 'aprovado' ? 'bg-emerald-500/90 text-white border-emerald-400' : 
-                        post.status === 'rejeitado' ? 'bg-rose-500/90 text-white border-rose-400' : 
-                        'bg-amber-400/90 text-white border-amber-300'
-                      }`}>{post.status}</span>
-                    </div>
                   </div>
 
                   {/* CONTEÚDO */}
-                  <div className="p-5 md:p-6 flex-1 flex flex-col min-h-0">
-                    <div className="flex justify-between items-start mb-4 shrink-0 gap-2">
-                      <div className="flex items-center gap-2 text-indigo-600/60 bg-indigo-50/50 w-fit px-3 py-1.5 rounded-full border border-indigo-100/50">
-                        <Calendar size={12} />
-                        <span className="text-[9px] md:text-[10px] font-black uppercase tracking-tight">
+                  <div className="p-8 flex-1 flex flex-col min-h-0">
+                    <div className="flex justify-between items-center mb-5 shrink-0">
+                      <div className="flex items-center gap-2 text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
+                        <Calendar size={14} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">
                           {post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}
                         </span>
                       </div>
+                      
+                      {!isClientView ? (
+                        <select 
+                          value={post.status} 
+                          onChange={(e) => changePostStatus(post.id, e.target.value, e)}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase border outline-none cursor-pointer appearance-none text-center ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}
+                        >
+                          <option value="pendente">Pendente</option>
+                          <option value="aprovado">Aprovado</option>
+                          <option value="rejeitado">Rejeitado</option>
+                        </select>
+                      ) : (
+                        <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                          {post.status}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="mb-4">
-                      {activeClientId === 'geral' && <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">{INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}</p>}
-                      <p className="text-slate-700 text-sm font-medium leading-relaxed italic break-words line-clamp-4">"{post.content}"</p>
+                    <div className="flex-1 overflow-y-auto mb-4 scrollbar-hide pr-2">
+                      <p className="text-slate-700 text-sm font-medium leading-relaxed italic whitespace-pre-wrap">"{post.content}"</p>
                     </div>
                     
                     {post.hashtags && (
-                      <p className="text-indigo-500 text-[10px] md:text-[11px] font-black mb-4 break-words">
+                      <p className="text-indigo-500 text-[11px] font-black mb-6 truncate shrink-0">
                         {post.hashtags}
                       </p>
                     )}
 
-                    {/* BASE INQUEBRÁVEL: LINHAS EMPILHADAS (FIM DO ESMAGAMENTO) */}
-                    <div className="mt-auto pt-4 border-t border-slate-50 flex flex-col gap-3 shrink-0">
-                      
-                      {/* Linha 1: Ferramentas Centradas */}
-                      <div className="flex items-center justify-between bg-slate-50 p-1.5 rounded-2xl">
-                        <div className="flex gap-1">
-                          <button onClick={() => setZoomedPost(post)} className="p-2 text-indigo-600 hover:bg-white hover:shadow-sm rounded-xl transition-all" title="Ampliar"><Maximize2 size={16} /></button>
-                          <button onClick={() => setFeedbackPost(post)} className="p-2 text-indigo-500 hover:bg-white hover:shadow-sm rounded-xl relative transition-all" title="Chat">
-                            <MessageSquare size={16} />
-                            {post.feedbacks?.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-indigo-500 rounded-full border-2 border-white"></span>}
-                          </button>
-                        </div>
+                    {/* BASE INQUEBRÁVEL */}
+                    <div className="pt-6 border-t border-slate-50 flex items-center justify-between shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => setZoomedPost(post)} className="p-2.5 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors" title="Zoom"><Maximize2 size={16} /></button>
+                        <button onClick={() => setFeedbackPost(post)} className="p-2.5 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-100 relative transition-colors" title="Chat">
+                          <MessageSquare size={16} />
+                          {post.feedbacks?.length > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white"></span>}
+                        </button>
                         
                         {!isClientView && (
-                          <div className="flex gap-1">
-                            <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2 text-slate-400 hover:bg-white hover:text-indigo-600 hover:shadow-sm rounded-xl transition-all" title="Editar"><Edit3 size={16} /></button>
-                            <button onClick={() => deletePost(post.id)} className="p-2 text-slate-300 hover:bg-rose-50 hover:text-rose-600 rounded-xl transition-all" title="Excluir"><Trash2 size={16} /></button>
-                          </div>
+                          <>
+                            <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors" title="Editar"><Edit3 size={16} /></button>
+                            <button onClick={() => deletePost(post.id)} className="p-2.5 bg-slate-50 text-slate-300 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-colors" title="Excluir"><Trash2 size={16} /></button>
+                          </>
                         )}
                       </div>
                       
-                      {/* Linha 2: Ações Divididas 50/50 em Grid */}
-                      <div className="grid grid-cols-2 gap-2 w-full">
-                        {post.status !== 'rejeitado' ? (
-                          <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="w-full bg-white text-rose-500 py-3 rounded-xl text-[9px] md:text-[10px] font-black border border-rose-100 hover:bg-rose-50 transition-colors uppercase tracking-widest">Rejeitar</button>
-                        ) : <div />}
-                        {post.status !== 'aprovado' ? (
-                          <button onClick={() => changePostStatus(post.id, 'aprovado')} className="w-full bg-emerald-500 text-white py-3 rounded-xl text-[9px] md:text-[10px] font-black shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>
-                        ) : <div />}
+                      <div className="flex gap-2 shrink-0">
+                        {post.status !== 'rejeitado' && (
+                          <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="px-4 py-2.5 bg-slate-50 text-rose-500 rounded-xl text-[10px] font-black border border-rose-100 hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>
+                        )}
+                        {post.status !== 'aprovado' && (
+                          <button onClick={() => changePostStatus(post.id, 'aprovado')} className="px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-[10px] font-black shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -372,22 +366,20 @@ export default function App() {
 
         {/* VIEW: CALENDÁRIO COM DRAG AND DROP */}
         {mainView === 'calendario' && (
-          <div className="bg-white rounded-[2rem] md:rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden pb-24 md:pb-0 mb-24">
-            <div className="p-5 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-               <div className="flex items-center gap-4 md:gap-6">
-                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-2 md:p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronLeft /></button>
-                  <h3 className="text-lg md:text-xl font-black text-slate-800 uppercase tracking-tighter">{currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}</h3>
-                  <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-2 md:p-3 hover:bg-slate-50 rounded-full text-slate-400"><ChevronRight /></button>
-               </div>
+          <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden pb-24">
+            <div className="p-8 border-b border-slate-100 flex justify-center items-center gap-8">
+               <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400 transition-colors"><ChevronLeft size={24} /></button>
+               <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">{currentMonth.toLocaleString('pt-PT', { month: 'long', year: 'numeric' })}</h3>
+               <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-3 hover:bg-slate-50 rounded-full text-slate-400 transition-colors"><ChevronRight size={24} /></button>
             </div>
 
             <div className="grid grid-cols-7 bg-slate-50 border-b border-slate-100">
               {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-                <div key={d} className="py-3 md:py-4 text-center text-[8px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{d}</div>
+                <div key={d} className="py-4 text-center text-xs font-black uppercase tracking-[0.2em] text-slate-400">{d}</div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7 auto-rows-[100px] md:auto-rows-[160px]">
+            <div className="grid grid-cols-7 auto-rows-[160px]">
               {(() => {
                 const { firstDay, days } = getDaysInMonth(currentMonth);
                 const cells = [];
@@ -408,25 +400,25 @@ export default function App() {
                         const postId = e.dataTransfer.getData('postId');
                         if (postId) setDoc(doc(db, 'agencias', 'aoki', 'posts', postId), { scheduleDate: dateStr }, { merge: true });
                       }}
-                      className="border-r border-b border-slate-100 p-1 md:p-3 flex flex-col gap-1 md:gap-1.5 hover:bg-slate-50 transition-colors group"
+                      className="border-r border-b border-slate-100 p-3 flex flex-col gap-1.5 hover:bg-slate-50 transition-colors group"
                     >
-                      <span className="text-[10px] md:text-xs font-black text-slate-300 group-hover:text-indigo-600 pl-1 md:pl-0">{d}</span>
-                      <div className="flex-1 overflow-y-auto space-y-1.5 scrollbar-hide px-1 md:px-0">
+                      <span className="text-xs font-black text-slate-300 group-hover:text-indigo-600">{d}</span>
+                      <div className="flex-1 overflow-y-auto space-y-2 scrollbar-hide">
                         {dayPosts.map(p => (
                           <div 
                             key={p.id}
                             draggable={!isClientView}
                             onDragStart={(e) => e.dataTransfer.setData('postId', p.id)}
                             onClick={() => setZoomedPost(p)}
-                            className={`p-1.5 rounded-lg border flex flex-col gap-1 cursor-pointer hover:scale-[1.02] shadow-sm ${
+                            className={`p-2 rounded-xl border flex flex-col gap-1 cursor-pointer hover:scale-[1.02] shadow-sm transition-transform ${
                               p.status === 'aprovado' ? 'bg-emerald-50/50 border-emerald-100' : 'bg-amber-50/50 border-amber-100'
                             }`}
                           >
                              <div className="flex justify-between items-center pointer-events-none">
-                                <span className="text-[8px] font-black text-slate-500">{p.scheduleTime}</span>
-                                {p.media && <div className="hidden md:block w-4 h-4 rounded-sm overflow-hidden bg-slate-200"><img src={Array.isArray(p.media) ? p.media[0].url : p.media.url} className="w-full h-full object-cover" /></div>}
+                                <span className="text-[9px] font-black text-slate-500">{p.scheduleTime}</span>
+                                {p.media && <div className="w-5 h-5 rounded-md overflow-hidden bg-slate-200"><img src={Array.isArray(p.media) ? p.media[0].url : p.media.url} className="w-full h-full object-cover" /></div>}
                              </div>
-                             <p className="text-[8px] font-medium text-slate-700 line-clamp-1 md:line-clamp-2 leading-tight pointer-events-none">{p.content}</p>
+                             <p className="text-[9px] font-medium text-slate-700 line-clamp-2 leading-tight pointer-events-none">{p.content}</p>
                           </div>
                         ))}
                       </div>
@@ -444,42 +436,42 @@ export default function App() {
       {!isClientView && (
         <button 
           onClick={() => { setEditingId(null); setFormState({ content: '', platforms: [], hashtags: '', postType: 'estatico', media: null, scheduleDate: '', scheduleTime: '' }); setIsModalOpen(true); }}
-          className="fixed bottom-6 right-6 md:bottom-10 md:right-10 bg-indigo-600 text-white h-14 w-14 md:h-auto md:w-auto md:px-8 md:py-4 rounded-full font-black shadow-[0_10px_40px_-10px_rgba(79,70,229,0.8)] hover:bg-indigo-700 hover:-translate-y-1 transition-all z-40 flex items-center justify-center gap-3 group"
+          className="fixed bottom-10 right-10 bg-indigo-600 text-white px-8 py-4 rounded-full font-black shadow-[0_10px_40px_-10px_rgba(79,70,229,0.8)] hover:bg-indigo-700 hover:-translate-y-1 transition-all z-40 flex items-center justify-center gap-3 group"
         >
           <Plus size={24} className="group-hover:rotate-90 transition-transform duration-300" /> 
-          <span className="hidden md:block uppercase tracking-widest text-[11px]">Novo Post</span>
+          <span className="uppercase tracking-widest text-xs">Novo Post</span>
         </button>
       )}
 
       {/* MODAL DE ZOOM */}
       {zoomedPost && (
-        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-0 md:p-8" onClick={() => setZoomedPost(null)}>
-          <div className="bg-white w-full h-full md:h-auto md:max-w-5xl md:rounded-[3rem] shadow-2xl flex flex-col md:flex-row overflow-hidden md:max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setZoomedPost(null)} className="absolute top-4 right-4 md:top-6 md:right-6 z-50 p-2 bg-white md:bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors shadow-sm md:shadow-none"><XCircle size={24} /></button>
+        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex items-center justify-center p-8" onClick={() => setZoomedPost(null)}>
+          <div className="bg-white w-full max-w-5xl rounded-[3rem] shadow-2xl flex overflow-hidden max-h-[90vh] relative" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setZoomedPost(null)} className="absolute top-6 right-6 z-50 p-2 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"><XCircle size={24} /></button>
             
-            <div className="w-full md:w-1/2 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 p-6 md:p-8 flex items-center justify-center min-h-[35vh] md:min-h-[300px]">
+            <div className="w-1/2 bg-slate-50 border-r border-slate-100 p-8 flex items-center justify-center min-h-[300px]">
                <div className="w-full max-w-sm aspect-[4/5] rounded-2xl overflow-hidden shadow-lg bg-white">
                   <MediaCarousel media={zoomedPost.media} isPreview={true} />
                </div>
             </div>
             
-            <div className="w-full md:w-1/2 p-6 md:p-12 overflow-y-auto flex flex-col h-[65vh] md:h-auto">
-               <div className="flex gap-2 mb-4 md:mb-6">
+            <div className="w-1/2 p-12 overflow-y-auto flex flex-col">
+               <div className="flex gap-2 mb-6">
                   <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg border border-slate-200">{zoomedPost.postType}</span>
                   <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase border ${zoomedPost.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : zoomedPost.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{zoomedPost.status}</span>
                </div>
                
-               <h3 className="text-lg md:text-xl font-black text-slate-900 mb-2">Detalhes da Postagem</h3>
-               <p className="text-xs md:text-sm font-bold text-indigo-600 flex items-center gap-2 mb-4 md:mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={14} className="md:w-4 md:h-4" /> {zoomedPost.scheduleDate ? `${zoomedPost.scheduleDate.split('-').reverse().join('/')} às ${zoomedPost.scheduleTime}` : 'Imediato'}</p>
+               <h3 className="text-xl font-black text-slate-900 mb-2">Detalhes da Postagem</h3>
+               <p className="text-sm font-bold text-indigo-600 flex items-center gap-2 mb-8 bg-indigo-50 w-fit px-4 py-2 rounded-xl"><Calendar size={16} /> {zoomedPost.scheduleDate ? `${zoomedPost.scheduleDate.split('-').reverse().join('/')} às ${zoomedPost.scheduleTime}` : 'Imediato'}</p>
                
-               <div className="bg-slate-50 p-5 md:p-6 rounded-3xl border border-slate-100 mb-4 md:mb-6">
+               <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-6 flex-1">
                   <p className="text-sm text-slate-800 font-medium whitespace-pre-wrap leading-relaxed">{zoomedPost.content}</p>
                </div>
-               <p className="text-sm font-black text-indigo-600 mb-6 md:mb-8 break-words">{zoomedPost.hashtags}</p>
+               <p className="text-sm font-black text-indigo-600 mb-8">{zoomedPost.hashtags}</p>
                
-               <div className="mt-auto pt-4 md:pt-6 border-t border-slate-100 flex gap-2">
-                  {zoomedPost.status !== 'rejeitado' && <button onClick={() => changePostStatus(zoomedPost.id, 'rejeitado')} className="flex-1 bg-rose-50 text-rose-600 py-4 md:py-3 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>}
-                  {zoomedPost.status !== 'aprovado' && <button onClick={() => changePostStatus(zoomedPost.id, 'aprovado')} className="flex-1 bg-emerald-500 text-white py-4 md:py-3 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar Post</button>}
+               <div className="mt-auto pt-6 border-t border-slate-100 flex gap-4">
+                  {zoomedPost.status !== 'rejeitado' && <button onClick={() => changePostStatus(zoomedPost.id, 'rejeitado')} className="flex-1 bg-rose-50 text-rose-600 py-4 rounded-2xl font-black text-xs hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>}
+                  {zoomedPost.status !== 'aprovado' && <button onClick={() => changePostStatus(zoomedPost.id, 'aprovado')} className="flex-1 bg-emerald-500 text-white py-4 rounded-2xl font-black text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar Post</button>}
                </div>
             </div>
           </div>
@@ -488,117 +480,115 @@ export default function App() {
 
       {/* MODAL DE NOVO/EDITAR POST COM UPLOAD */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
-          <div className="bg-white w-full h-[90vh] md:h-auto md:max-w-2xl rounded-t-[2.5rem] md:rounded-[3.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300 flex flex-col">
-            <div className="p-6 md:p-8 border-b border-slate-50 flex justify-between items-center bg-white/90 backdrop-blur-xl shrink-0">
-              <h2 className="text-xl md:text-2xl font-black text-slate-900">{editingId ? 'Editar Post' : 'Novo Conteúdo'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 md:p-3 bg-slate-100 rounded-2xl text-slate-400 hover:rotate-90 transition-all"><XCircle size={20} className="md:w-6 md:h-6" /></button>
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <div className="p-8 border-b border-slate-50 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-xl z-10">
+              <h2 className="text-2xl font-black text-slate-900">{editingId ? 'Editar Post' : 'Novo Conteúdo'}</h2>
+              <button onClick={() => setIsModalOpen(false)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:rotate-90 transition-all"><XCircle size={24} /></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto">
-              <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8 md:space-y-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
-                  <div className="space-y-6 md:space-y-8">
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Destino</label>
-                      <div className="flex gap-2">
-                        {['instagram', 'facebook', 'linkedin'].map(plt => (
-                          <button key={plt} type="button" onClick={() => setFormState(prev => ({ ...prev, platforms: prev.platforms.includes(plt) ? prev.platforms.filter(p => p !== plt) : [...prev.platforms, plt] }))} className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[9px] uppercase ${formState.platforms.includes(plt) ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md' : 'border-slate-100 text-slate-400'}`}>{plt}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Formato</label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {[ { id: 'estatico', icon: <Square size={16} />, label: 'Post' }, { id: 'carrossel', icon: <Layers size={16} />, label: 'Album' }, { id: 'reel', icon: <Film size={16} />, label: 'Vídeo' } ].map(type => (
-                          <button key={type.id} type="button" onClick={() => setFormState({...formState, postType: type.id})} className={`flex flex-col items-center gap-2 py-3 md:py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest flex items-center gap-2">Mídia (Arraste p/ Reordenar)</label>
-                      <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
-                      <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
-                        <div onClick={() => fileInputRef.current.click()} className="h-20 w-20 md:h-24 md:w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
-                          <Plus size={24} className="text-indigo-500 mb-1" />
-                          <span className="text-[9px] font-black text-slate-500 uppercase">Upload</span>
-                        </div>
-                        {(() => {
-                          const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
-                          return mArr.map((m, i) => (
-                            <div 
-                              key={i} draggable onDragStart={() => setDraggedMediaIdx(i)} onDragOver={(e) => e.preventDefault()}
-                              onDrop={(e) => { e.preventDefault(); if (draggedMediaIdx === null || draggedMediaIdx === i) return; setFormState(prev => { const newMedia = [...prev.media]; const temp = newMedia[draggedMediaIdx]; newMedia.splice(draggedMediaIdx, 1); newMedia.splice(i, 0, temp); return { ...prev, media: newMedia }; }); setDraggedMediaIdx(null); }}
-                              className="h-20 w-20 md:h-24 md:w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 group/item cursor-grab active:cursor-grabbing"
-                            >
-                              <img src={m.url} className="w-full h-full object-cover pointer-events-none" />
-                              <div className="absolute inset-0 bg-slate-900/60 md:opacity-0 md:group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm"><button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-2 rounded-xl hover:scale-110 transition-transform"><Trash2 size={14} className="md:w-4 md:h-4" /></button></div>
-                              <span className="absolute top-1 left-1 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md pointer-events-none">{i + 1}</span>
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                      {uploadError && <p className="text-red-500 text-[10px] font-bold mt-2">{uploadError}</p>}
+            <form onSubmit={handleSubmit} className="p-8 space-y-10">
+              <div className="grid grid-cols-2 gap-10">
+                <div className="space-y-8">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Destino</label>
+                    <div className="flex gap-2">
+                      {['instagram', 'facebook', 'linkedin'].map(plt => (
+                        <button key={plt} type="button" onClick={() => setFormState(prev => ({ ...prev, platforms: prev.platforms.includes(plt) ? prev.platforms.filter(p => p !== plt) : [...prev.platforms, plt] }))} className={`flex-1 py-3 rounded-xl border-2 transition-all font-black text-[9px] uppercase ${formState.platforms.includes(plt) ? 'border-indigo-600 bg-indigo-50 text-indigo-600 shadow-md' : 'border-slate-100 text-slate-400'}`}>{plt}</button>
+                      ))}
                     </div>
                   </div>
-
-                  <div className="space-y-6 md:space-y-8">
-                    <div className="bg-indigo-50/50 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-indigo-100">
-                      <label className="block text-[10px] font-black text-indigo-400 uppercase mb-3 md:mb-4 tracking-widest">Agendamento</label>
-                      <div className="space-y-3">
-                        <input type="date" required className="w-full p-3 md:p-4 bg-white border border-indigo-100 rounded-xl md:rounded-2xl text-xs font-black outline-none" value={formState.scheduleDate} onChange={(e) => setFormState({...formState, scheduleDate: e.target.value})} />
-                        <input type="time" required className="w-full p-3 md:p-4 bg-white border border-indigo-100 rounded-xl md:rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} />
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Formato</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[ { id: 'estatico', icon: <Square size={16} />, label: 'Post' }, { id: 'carrossel', icon: <Layers size={16} />, label: 'Album' }, { id: 'reel', icon: <Film size={16} />, label: 'Vídeo' } ].map(type => (
+                        <button key={type.id} type="button" onClick={() => setFormState({...formState, postType: type.id})} className={`flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${formState.postType === type.id ? 'border-indigo-600 bg-indigo-50 text-indigo-600' : 'border-slate-100 text-slate-400'}`}>{type.icon} <span className="text-[9px] font-black uppercase">{type.label}</span></button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest flex items-center gap-2">Mídia (Arraste p/ Reordenar)</label>
+                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleMediaUpload} accept="image/*,video/*" multiple={formState.postType === 'carrossel'} />
+                    <div className="flex gap-3 overflow-x-auto w-full pb-2 scrollbar-hide items-start">
+                      <div onClick={() => fileInputRef.current.click()} className="h-24 w-24 shrink-0 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 hover:border-indigo-300 transition-all">
+                        <Plus size={24} className="text-indigo-500 mb-1" />
+                        <span className="text-[9px] font-black text-slate-500 uppercase">Upload</span>
                       </div>
+                      {(() => {
+                        const mArr = Array.isArray(formState.media) ? formState.media : (formState.media ? [formState.media] : []);
+                        return mArr.map((m, i) => (
+                          <div 
+                            key={i} draggable onDragStart={() => setDraggedMediaIdx(i)} onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => { e.preventDefault(); if (draggedMediaIdx === null || draggedMediaIdx === i) return; setFormState(prev => { const newMedia = [...prev.media]; const temp = newMedia[draggedMediaIdx]; newMedia.splice(draggedMediaIdx, 1); newMedia.splice(i, 0, temp); return { ...prev, media: newMedia }; }); setDraggedMediaIdx(null); }}
+                            className="h-24 w-24 shrink-0 relative rounded-[1.5rem] overflow-hidden border border-slate-200 group/item cursor-grab active:cursor-grabbing"
+                          >
+                            <img src={m.url} className="w-full h-full object-cover pointer-events-none" />
+                            <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover/item:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm"><button type="button" onClick={() => removeMedia(i)} className="bg-rose-500 text-white p-2 rounded-xl hover:scale-110 transition-transform"><Trash2 size={16} /></button></div>
+                            <span className="absolute top-2 left-2 bg-slate-900/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-md pointer-events-none">{i + 1}</span>
+                          </div>
+                        ));
+                      })()}
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Legenda</label>
-                      <textarea required rows={4} className="w-full p-5 md:p-6 bg-slate-50 border border-slate-200 rounded-[1.5rem] md:rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Escreve aqui..."></textarea>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-3 md:mb-4 tracking-widest">Hashtags</label>
-                      <input type="text" className="w-full p-4 md:p-5 bg-slate-50 border border-slate-200 rounded-[1rem] md:rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
-                    </div>
+                    {uploadError && <p className="text-red-500 text-[10px] font-bold mt-2">{uploadError}</p>}
                   </div>
                 </div>
 
-                <div className="flex gap-3 md:gap-4 pt-4 md:pt-6 border-t border-slate-50">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 md:py-5 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600 transition-colors">Cancelar</button>
-                  <button type="submit" disabled={formState.platforms.length === 0 || isUploading} className={`flex-[2] flex items-center justify-center gap-2 py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${formState.platforms.length === 0 ? 'bg-slate-100 text-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
-                    {isUploading ? <><Loader2 size={16} className="animate-spin" /> A guardar...</> : (editingId ? 'Atualizar Post' : 'Lançar Post')}
-                  </button>
+                <div className="space-y-8">
+                  <div className="bg-indigo-50/50 p-6 rounded-[2.5rem] border border-indigo-100">
+                    <label className="block text-[10px] font-black text-indigo-400 uppercase mb-4 tracking-widest">Agendamento</label>
+                    <div className="space-y-3">
+                      <input type="date" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleDate} onChange={(e) => setFormState({...formState, scheduleDate: e.target.value})} />
+                      <input type="time" required className="w-full p-4 bg-white border border-indigo-100 rounded-2xl text-xs font-black outline-none" value={formState.scheduleTime} onChange={(e) => setFormState({...formState, scheduleTime: e.target.value})} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Legenda</label>
+                    <textarea required rows={4} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium outline-none resize-none leading-relaxed" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Escreve aqui..."></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase mb-4 tracking-widest">Hashtags</label>
+                    <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
+                  </div>
                 </div>
-              </form>
-            </div>
+              </div>
+
+              <div className="flex gap-4 pt-6 border-t border-slate-50">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 text-slate-400 font-black text-[10px] uppercase hover:text-slate-600 transition-colors">Cancelar</button>
+                <button type="submit" disabled={formState.platforms.length === 0 || isUploading} className={`flex-[2] flex items-center justify-center gap-2 py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-widest shadow-2xl transition-all active:scale-95 ${formState.platforms.length === 0 ? 'bg-slate-100 text-slate-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                  {isUploading ? <><Loader2 size={16} className="animate-spin" /> A guardar...</> : (editingId ? 'Atualizar Post' : 'Lançar Post')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
       {/* MODAL DE CHAT DE FEEDBACK */}
       {feedbackPost && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-end md:items-center justify-center p-0 md:p-4">
-          <div className="bg-white w-full h-[85vh] md:h-[600px] md:max-w-md rounded-t-[2.5rem] md:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-bottom-full md:zoom-in-95 duration-300">
-            <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col h-[600px] max-h-[90vh]">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <div>
-                <h2 className="text-base md:text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={18} className="text-indigo-500" /> Chat do Post</h2>
-                <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {feedbackPost.status}</p>
+                <h2 className="text-lg font-black text-slate-900 flex items-center gap-2"><MessageSquare size={18} className="text-indigo-500" /> Chat do Post</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Status: {feedbackPost.status}</p>
               </div>
-              <button onClick={() => setFeedbackPost(null)} className="p-2 bg-white rounded-xl text-slate-400 shadow-sm"><XCircle size={20} /></button>
+              <button onClick={() => setFeedbackPost(null)} className="p-2 bg-white rounded-xl text-slate-400 shadow-sm hover:bg-slate-100 transition-colors"><XCircle size={20} /></button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-5 md:p-6 space-y-4 bg-white">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-white">
               {(!feedbackPost.feedbacks || feedbackPost.feedbacks.length === 0) ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-300 space-y-2 opacity-50">
                   <MessageSquare size={32} />
-                  <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest">Sem mensagens</p>
+                  <p className="text-xs font-bold uppercase tracking-widest">Sem mensagens</p>
                 </div>
               ) : (
                 feedbackPost.feedbacks.map((msg, i) => {
                   const isMine = (isClientView && msg.author === 'Cliente') || (!isClientView && msg.author === 'Agência');
                   return (
                     <div key={i} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
-                      <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase mb-1">{msg.author} • {new Date(msg.date).toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})}</span>
-                      <div className={`px-3 py-2 md:px-4 md:py-3 rounded-2xl max-w-[85%] text-xs md:text-sm font-medium leading-relaxed shadow-sm ${isMine ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'}`}>
+                      <span className="text-[9px] font-black text-slate-400 uppercase mb-1">{msg.author} • {new Date(msg.date).toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'})}</span>
+                      <div className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm font-medium leading-relaxed shadow-sm ${isMine ? 'bg-indigo-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'}`}>
                         {msg.text}
                       </div>
                     </div>
@@ -607,9 +597,9 @@ export default function App() {
               )}
             </div>
 
-            <form onSubmit={handleSendFeedback} className="p-3 md:p-4 border-t border-slate-100 bg-slate-50 flex gap-2 shrink-0">
-              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Comentário..." className="flex-1 px-3 py-2 md:px-4 md:py-3 rounded-xl border border-slate-200 text-xs md:text-sm font-medium outline-none focus:border-indigo-500 transition-colors" />
-              <button type="submit" disabled={!newFeedbackMessage.trim()} className="p-2 md:p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all flex-shrink-0"><SendHorizonal size={18} className="md:w-5 md:h-5" /></button>
+            <form onSubmit={handleSendFeedback} className="p-4 border-t border-slate-100 bg-slate-50 flex gap-2 shrink-0">
+              <input type="text" value={newFeedbackMessage} onChange={(e) => setNewFeedbackMessage(e.target.value)} placeholder="Comentário..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium outline-none focus:border-indigo-500 transition-colors" />
+              <button type="submit" disabled={!newFeedbackMessage.trim()} className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-all flex-shrink-0"><SendHorizonal size={20} /></button>
             </form>
           </div>
         </div>
