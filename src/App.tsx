@@ -112,14 +112,17 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('view') === 'client') setIsClientView(true);
-    signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
-    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
-    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (currentClient) document.title = isClientView ? `Aprovação: ${currentClient.name} | Aoki` : `${currentClient.name} | SocialFlow Aoki`;
   }, [currentClient, isClientView]);
+
+  useEffect(() => {
+    signInAnonymously(auth).catch(err => console.error("Erro auth:", err));
+    const unsubscribe = onAuthStateChanged(auth, (u) => { setUser(u); if (!u) setIsLoading(false); });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -230,11 +233,10 @@ export default function App() {
 
   return (
     <>
-    {/* CONTAINER PRINCIPAL FIXO PARA DESKTOP */}
     <div className="fixed inset-0 flex bg-[#F8FAFC] font-sans text-slate-900 antialiased overflow-hidden print:hidden">
       
-      {/* SIDEBAR FIXA E ACHATADA PARA CABER EM ECRÃS MENORES */}
-      <aside className="w-72 bg-white border-r border-slate-200 p-6 flex flex-col gap-5 h-full shrink-0 z-20 shadow-sm overflow-y-auto scrollbar-hide">  
+      {/* SIDEBAR AJUSTADA: Mais fininha (w-64) e com menos paddings verticais */}
+      <aside className="w-64 bg-white border-r border-slate-200 p-5 flex flex-col gap-5 h-full shrink-0 z-20 shadow-sm overflow-y-auto scrollbar-hide">  
         <div className="flex items-center gap-3">
           <div className="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-lg shadow-indigo-100"><Send size={20} /></div>
           <span className="font-black text-xl tracking-tighter">SocialFlow</span>
@@ -268,9 +270,9 @@ export default function App() {
         )}
       </aside>
 
-      {/* ÁREA PRINCIPAL */}
-      <main className="flex-1 h-full overflow-y-auto p-10 min-w-0">
-        <header className="mb-10 flex justify-between items-center">
+      {/* ÁREA PRINCIPAL: Paddings ajustados (p-6 a p-8) */}
+      <main className="flex-1 h-full overflow-y-auto p-6 md:p-8 min-w-0">
+        <header className="mb-8 flex justify-between items-center">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className={`w-5 h-5 rounded-lg bg-gradient-to-tr ${currentClient?.color} shadow-sm`} />
@@ -281,40 +283,35 @@ export default function App() {
         </header>
 
         {mainView === 'feed' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 w-full items-start pb-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 w-full items-start pb-24">
             {filteredPosts.length === 0 ? (
               <div className="bg-white border-2 border-dashed border-slate-200 rounded-[3rem] p-20 text-center flex flex-col items-center col-span-full text-slate-400 font-bold uppercase text-[10px] tracking-widest"><ImageIcon className="w-12 h-12 mb-4 text-slate-200" /> Sem rascunhos</div>
             ) : (
               filteredPosts.map(post => (
-                <div key={post.id} className="bg-white rounded-[3rem] border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden flex flex-col group h-[620px]">
+                <div key={post.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm transition-all hover:shadow-2xl overflow-hidden flex flex-col group h-[600px]">
                   
                   {/* IMAGEM E STATUS */}
-                  <div className="h-[280px] w-full bg-slate-50 relative border-b border-slate-50 shrink-0">
+                  <div className="h-[250px] w-full bg-slate-50 relative border-b border-slate-50 shrink-0">
                     <MediaCarousel media={post.media} isPreview={false} />
-                    <div className="absolute top-4 left-4 flex gap-2">
+                    <div className="absolute top-4 left-4 flex gap-1.5 flex-wrap">
                       {post.platforms.map(plt => (
-                        <div key={plt} className="p-2 bg-white/90 backdrop-blur-md rounded-xl shadow-sm text-indigo-600 border border-white">
+                        <div key={plt} className="p-1.5 bg-white/90 backdrop-blur-md rounded-xl shadow-sm text-indigo-600 border border-white">
                           {plt === 'instagram' && <Instagram size={14} />}
                           {plt === 'facebook' && <Facebook size={14} />}
                           {plt === 'linkedin' && <Linkedin size={14} />}
                         </div>
                       ))}
                     </div>
-                    <div className="absolute top-4 right-4">
-                      <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black backdrop-blur-md shadow-sm border uppercase ${
-                        post.status === 'aprovado' ? 'bg-emerald-500/90 text-white border-emerald-400' : 
-                        post.status === 'rejeitado' ? 'bg-rose-500/90 text-white border-rose-400' : 
-                        'bg-amber-400/90 text-white border-amber-300'
-                      }`}>{post.status}</span>
-                    </div>
                   </div>
 
                   {/* CONTEÚDO */}
-                  <div className="p-8 flex-1 flex flex-col min-h-0 overflow-hidden">
-                    <div className="flex justify-between items-center mb-5 shrink-0">
-                      <div className="flex items-center gap-2 text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
-                        <Calendar size={14} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">
+                  <div className="p-5 md:p-6 flex-1 flex flex-col min-h-0 overflow-hidden">
+                    
+                    {/* TOPO DO CARD: FLEX-WRAP para não esmagar se apertar */}
+                    <div className="flex flex-wrap justify-between items-start gap-2 mb-4 shrink-0">
+                      <div className="flex items-center gap-1.5 text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
+                        <Calendar size={12} />
+                        <span className="text-[9px] font-black uppercase tracking-widest">
                           {post.scheduleDate ? `${post.scheduleDate.split('-').reverse().join('/')} às ${post.scheduleTime}` : 'Imediato'}
                         </span>
                       </div>
@@ -323,49 +320,54 @@ export default function App() {
                         <select 
                           value={post.status} 
                           onChange={(e) => changePostStatus(post.id, e.target.value, e)}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase border outline-none cursor-pointer appearance-none text-center ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border outline-none cursor-pointer appearance-none text-center ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}
                         >
                           <option value="pendente">Pendente</option>
                           <option value="aprovado">Aprovado</option>
                           <option value="rejeitado">Rejeitado</option>
                         </select>
                       )}
+                      {isClientView && (
+                        <span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border ${post.status === 'aprovado' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : post.status === 'rejeitado' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                          {post.status}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto mb-4 scrollbar-hide">
+                    <div className="flex-1 overflow-y-auto mb-3 scrollbar-hide pr-2">
                       {activeClientId === 'geral' && <p className="text-[9px] font-black text-indigo-500 uppercase mb-1">{INITIAL_CLIENTS.find(c => c.id === post.clientId)?.name}</p>}
                       <p className="text-slate-700 text-sm font-medium leading-relaxed italic whitespace-pre-wrap">"{post.content}"</p>
                     </div>
                     
                     {post.hashtags && (
-                      <p className="text-indigo-500 text-[11px] font-black mb-6 truncate shrink-0">
+                      <p className="text-indigo-500 text-[10px] font-black mb-4 truncate shrink-0">
                         {post.hashtags}
                       </p>
                     )}
 
-                    {/* BASE: BOTÕES LADO A LADO SEMPRE ALINHADOS */}
-                    <div className="pt-6 border-t border-slate-50 flex items-center justify-between shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        <button onClick={() => setZoomedPost(post)} className="p-2.5 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors" title="Ampliar"><Maximize2 size={16} /></button>
-                        <button onClick={() => setFeedbackPost(post)} className="p-2.5 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-100 relative transition-colors" title="Chat">
+                    {/* RODAPÉ DO CARD: FLEX-WRAP para manter os botões seguros */}
+                    <div className="pt-4 border-t border-slate-50 flex flex-wrap items-center justify-between gap-y-3 shrink-0">
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setZoomedPost(post)} className="p-2 bg-slate-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition-colors" title="Ampliar"><Maximize2 size={16} /></button>
+                        <button onClick={() => setFeedbackPost(post)} className="p-2 bg-slate-50 text-indigo-500 rounded-xl hover:bg-indigo-100 relative transition-colors" title="Chat">
                           <MessageSquare size={16} />
                           {post.feedbacks?.length > 0 && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-white animate-pulse"></span>}
                         </button>
                         
                         {!isClientView && (
                           <>
-                            <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2.5 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors" title="Editar"><Edit3 size={16} /></button>
-                            <button onClick={() => deletePost(post.id)} className="p-2.5 bg-slate-50 text-slate-300 rounded-xl hover:text-rose-600 hover:bg-rose-50 transition-colors" title="Excluir"><Trash2 size={16} /></button>
+                            <button onClick={() => { setEditingId(post.id); setFormState({...post}); setIsModalOpen(true); }} className="p-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-indigo-50 transition-colors" title="Editar"><Edit3 size={16} /></button>
+                            <button onClick={() => deletePost(post.id)} className="p-2 bg-slate-50 text-slate-300 rounded-xl hover:bg-rose-50 hover:text-rose-600 transition-colors" title="Excluir"><Trash2 size={16} /></button>
                           </>
                         )}
                       </div>
                       
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex gap-2">
                         {post.status !== 'rejeitado' && (
-                          <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="px-5 py-2.5 bg-slate-50 text-rose-500 rounded-[1.2rem] text-[10px] font-black border border-rose-100 hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>
+                          <button onClick={() => changePostStatus(post.id, 'rejeitado')} className="px-3 py-2 bg-slate-50 text-rose-500 rounded-xl text-[9px] font-black border border-rose-100 hover:bg-rose-100 transition-colors uppercase tracking-widest">Rejeitar</button>
                         )}
                         {post.status !== 'aprovado' && (
-                          <button onClick={() => changePostStatus(post.id, 'aprovado')} className="px-5 py-2.5 bg-emerald-500 text-white rounded-[1.2rem] text-[10px] font-black shadow-lg shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>
+                          <button onClick={() => changePostStatus(post.id, 'aprovado')} className="px-3 py-2 bg-emerald-500 text-white rounded-xl text-[9px] font-black shadow-md shadow-emerald-100 hover:bg-emerald-600 transition-colors uppercase tracking-widest">Aprovar</button>
                         )}
                       </div>
                     </div>
