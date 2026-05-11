@@ -310,7 +310,7 @@ export default function App() {
       {/* MODAL NOVO POST */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl rounded-[3.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="p-8 border-b border-slate-50 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur-xl z-10">
               <h2 className="text-2xl font-black text-slate-900">{editingId ? 'Editar Post' : 'Novo Conteúdo'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="p-3 bg-slate-100 rounded-2xl text-slate-400 hover:rotate-90 transition-all"><XCircle size={24} /></button>
@@ -348,6 +348,8 @@ export default function App() {
                     </div>
                   </div>
                   <textarea required rows={5} className="w-full p-6 bg-slate-50 border border-slate-200 rounded-[2rem] text-sm font-medium outline-none resize-none" value={formState.content} onChange={(e) => setFormState({...formState, content: e.target.value})} placeholder="Legenda do post..."></textarea>
+                  {/* BOX DE HASHTAGS (VOLTOU!) */}
+                  <input type="text" className="w-full p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-black outline-none" value={formState.hashtags} onChange={(e) => setFormState({...formState, hashtags: e.target.value})} placeholder="#aoki #socialmedia" />
                 </div>
               </div>
               <div className="flex gap-4 pt-6 border-t border-slate-50">
